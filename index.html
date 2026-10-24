@@ -9,10 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&family=PT+Mono&display=swap" rel="stylesheet">
 <style>
-/* Лист чертежа: рамка-штамп сверху, ниже — разделы курса сеткой карточек */
+/* Лист чертежа: рамка-штамп сверху, ниже — папки лекций, внутри папки — темы карточками */
 :root{
   --paper:#E9EDF1; --sheet:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
-  --p2:#3B7BC4; --p1:#3E9A64; --red:#C8424A; --hi:#FCE9A8;
+  --p2:#3B7BC4; --p1:#3E9A64; --red:#C8424A; --hi:#FCE9A8; --tab:#D9E1E8;
   --f-display:"PT Sans Narrow","PT Sans","Arial Narrow",Arial,sans-serif;
   --f-body:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;
   --f-mono:"PT Mono",ui-monospace,Consolas,monospace;
@@ -20,9 +20,9 @@
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --paper:#141B23; --sheet:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --red:#E86A70; --hi:#5A4A1A; color-scheme:dark; }
+  :root:not([data-theme="light"]){ --paper:#141B23; --sheet:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --red:#E86A70; --hi:#5A4A1A; --tab:#263241; color-scheme:dark; }
 }
-:root[data-theme="dark"]{ --paper:#141B23; --sheet:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --red:#E86A70; --hi:#5A4A1A; color-scheme:dark; }
+:root[data-theme="dark"]{ --paper:#141B23; --sheet:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --red:#E86A70; --hi:#5A4A1A; --tab:#263241; color-scheme:dark; }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--f-body)}
 .wrap{max-width:1080px;margin:0 auto;padding-block:20px 40px;
@@ -33,6 +33,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--f-bo
 .stamp{border:2px solid var(--ink);background:var(--sheet);display:grid;grid-template-columns:1fr auto}
 .stamp .name{padding:14px 16px;border-right:1px solid var(--ink);min-width:0}
 .stamp h1{font:700 clamp(1.5rem,4vw,2.2rem)/1.1 var(--f-display);margin:0;text-wrap:balance}
+.stamp h1 a{color:inherit;text-decoration:none}
 .stamp .name p{margin:4px 0 0;color:var(--muted);font-size:.95rem}
 .stamp .meta{display:grid;grid-template-rows:1fr 1fr;font:13px/1.2 var(--f-mono);min-width:7.5rem}
 .stamp .meta div{padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
@@ -41,7 +42,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--f-bo
 .stamp .meta b{font-size:18px;font-variant-numeric:tabular-nums}
 @media (max-width:520px){ .stamp{grid-template-columns:1fr} .stamp .name{border-right:0;border-bottom:1px solid var(--ink)} .stamp .meta{grid-template-columns:1fr 1fr;grid-template-rows:none} .stamp .meta div+div{border-top:0;border-left:1px solid var(--ink)} }
 
-/* поиск и фильтры */
+/* поиск */
 .tools{display:flex;flex-direction:column;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
 .search{position:relative}
@@ -49,12 +50,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .search input:focus{outline:none;border-color:var(--p2);box-shadow:0 0 0 3px color-mix(in srgb,var(--p2) 25%,transparent)}
 .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:12px var(--f-mono);color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:2px 6px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{font:inherit;font-size:.9rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;cursor:pointer}
-.chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
-.chips button .n{color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
-.chips button[aria-pressed="true"] .n{color:inherit;opacity:.7}
-button:focus-visible,a:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.95rem;min-height:1.6em}
+.crumbs a{color:var(--p2);text-decoration:none}
+.crumbs a:hover{text-decoration:underline}
+.crumbs .sep{color:var(--muted)}
+.crumbs .here{font-weight:700}
+a:focus-visible,button:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
 
 /* разделы */
 main{display:flex;flex-direction:column;gap:26px}
@@ -62,16 +63,33 @@ section{display:flex;flex-direction:column;gap:10px}
 section h2{font:700 1.15rem/1.2 var(--f-display);margin:0;display:flex;align-items:baseline;gap:10px;letter-spacing:.01em}
 section h2::after{content:"";flex:1;border-bottom:1px solid var(--rule);transform:translateY(-4px)}
 section h2 small{font:13px var(--f-mono);color:var(--muted)}
+section h2 a{color:inherit;text-decoration:none}
+section h2 a:hover{color:var(--p2)}
+.lead{margin:0;color:var(--muted);max-width:65ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 @media (max-width:360px){ .grid{grid-template-columns:1fr} }
 
+/* папка лекции: ярлык-вкладка сверху, как у бумажной папки */
+.folder{position:relative;display:flex;flex-direction:column;gap:6px;color:inherit;text-decoration:none;
+  background:var(--sheet);border:1px solid var(--rule);border-radius:0 8px 8px 8px;padding:14px 14px 12px;margin-top:14px;transition:border-color .15s, transform .15s}
+.folder::before{content:attr(data-tab);position:absolute;left:-1px;bottom:100%;font:12px/1 var(--f-mono);letter-spacing:.04em;
+  background:var(--tab);color:var(--ink);border:1px solid var(--rule);border-bottom:0;border-radius:6px 6px 0 0;padding:4px 10px 3px}
+.folder:hover{border-color:var(--p2)}
+@media (prefers-reduced-motion:no-preference){ .folder:hover,.card:hover{transform:translateY(-1px)} }
+.folder h3{font:700 1.25rem/1.15 var(--f-display);margin:0;text-wrap:balance}
+.folder ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;font-size:.9rem;color:var(--muted)}
+.folder li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder li::before{content:"— "}
+.folder .count{font:13px var(--f-mono);color:var(--muted);margin-top:auto;padding-top:4px}
+
+/* карточка темы */
 .card{display:grid;grid-template-columns:76px 1fr;gap:12px;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:12px;color:inherit;text-decoration:none;transition:border-color .15s, transform .15s}
 .card:hover{border-color:var(--p2)}
-@media (prefers-reduced-motion:no-preference){ .card:hover{transform:translateY(-1px)} }
 .card .ico{width:76px;height:76px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink)}
 .card .body{min-width:0;display:flex;flex-direction:column;gap:4px}
 .card h3{font:700 1.05rem/1.2 var(--f-body);margin:0;text-wrap:balance}
 .card p{margin:0;font-size:.9rem;color:var(--muted)}
+.card .where{font:12px var(--f-mono);color:var(--p2)}
 .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:4px}
 .tags span{font:12px/1.4 var(--f-mono);color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:0 5px}
 mark{background:var(--hi);color:inherit;border-radius:2px}
@@ -85,66 +103,64 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--rule);padd
 <div class="wrap">
   <header class="stamp">
     <div class="name">
-      <h1>Начертательная геометрия и инженерная графика</h1>
-      <p>3D-анимации к задачам: вращай модель, переключай шаги, складывай П₁ в эпюр</p>
+      <h1><a href="#">Начертательная геометрия и инженерная графика</a></h1>
+      <p>3D-анимации к лекциям: вращай модель, переключай шаги построения, складывай П₁ в эпюр</p>
     </div>
     <div class="meta">
-      <div><span>Анимаций</span><b id="total">9</b></div>
-      <div><span>Разделов</span><b id="sections">4</b></div>
+      <div><span>Лекций</span><b id="nLect">0</b></div>
+      <div><span>Тем</span><b id="nTopics">0</b></div>
     </div>
   </header>
 
   <div class="tools">
     <label class="search" for="q">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      <input id="q" type="search" placeholder="Поиск: конус, видимость, натуральная величина, П₃…" autocomplete="off" aria-label="Поиск по анимациям">
+      <input id="q" type="search" placeholder="Поиск по всем лекциям: конус, видимость, натуральная величина, П₃…" autocomplete="off" aria-label="Поиск по темам">
       <kbd>/</kbd>
     </label>
-    <div class="chips" id="chips" role="group" aria-label="Раздел"></div>
+    <nav class="crumbs" id="crumbs" aria-label="Навигация"></nav>
   </div>
 
   <main id="list"></main>
 
-  <footer>Каждая анимация открывается отдельной страницей; кнопка «← Каталог» в углу возвращает сюда. Нужен интернет: модели загружают three.js.</footer>
+  <footer>Тема открывается отдельной страницей с анимацией и описанием шагов построения; кнопка «← Каталог» в углу возвращает назад. Нужен интернет: модели загружают three.js.</footer>
 </div>
 
 <script>
-// ---------- каталог ----------
-// icon — ключ схематичной картинки ниже; keys — синонимы для поиска (то, как это называют на паре)
-const TOPICS = [
-  {id:'surf', name:'Точки на поверхностях'},
-  {id:'lines', name:'Прямые'},
-  {id:'cross', name:'Пересечения'},
-  {id:'draw', name:'Черчение'},
-];
-const ITEMS = [
-  {t:'surf', href:'anim/sphere-points.html', icon:'sphere',
-   title:'Сфера: проекции точек', desc:'Точки на экваторе, главном меридиане и в общем положении. Плоскость Σ ∥ П₁ и параллель.',
-   tags:['сфера','параллель','Σ ∥ П₁'], keys:'шар экватор меридиан очерк видимость точка на поверхности'},
-  {t:'surf', href:'anim/cone-points.html', icon:'cone',
-   title:'Конус: проекции точки', desc:'Дана D₂ — найти D₁ двумя способами: параллелью и образующей.',
-   tags:['конус','параллель','образующая'], keys:'точка на поверхности вершина основание видимость'},
-  {t:'lines', href:'anim/two-lines.html', icon:'twolines',
-   title:'Взаимное положение двух прямых', desc:'Скрещивающиеся, пересекающиеся, параллельные — как отличить по эпюру.',
-   tags:['скрещивающиеся','конкурирующие точки'], keys:'параллельные пересекающиеся видимость линии связи'},
-  {t:'lines', href:'anim/profile-line.html', icon:'profile',
-   title:'Профильная прямая', desc:'Почему двух проекций мало и как помогает П₃. Ловушка с точкой C.',
-   tags:['П₃','н.в.','α + β = 90°'], keys:'профильная плоскость натуральная величина углы наклона принадлежность точки прямой'},
-  {t:'lines', href:'anim/right-triangle.html', icon:'triangle',
-   title:'Метод прямоугольного треугольника', desc:'Почему гипотенуза равна натуральной величине отрезка. Углы α и β.',
-   tags:['н.в. отрезка','Δz','Δy','α','β'], keys:'натуральная величина длина отрезка угол наклона к плоскости проекций'},
-  {t:'cross', href:'anim/line-plane.html', icon:'plane',
-   title:'Прямая и плоскость общего положения', desc:'Точка K = l ∩ ABC через вспомогательную проецирующую плоскость Γ.',
-   tags:['Γ ⊥ П₁','точка встречи','видимость'], keys:'пересечение прямой с плоскостью треугольник конкурирующие точки посредник'},
-  {t:'cross', href:'anim/line-pyramid.html', icon:'pyramid',
-   title:'Прямая и пирамида', desc:'Сечение плоскостью Γ ⊥ П₂, точки входа и выхода M и N.',
-   tags:['сечение','точки входа и выхода'], keys:'пересечение прямой с многогранником пирамида видимость фронтально-проецирующая'},
-  {t:'cross', href:'anim/line-cylinder.html', icon:'cylinder',
-   title:'Прямая и цилиндр', desc:'Цилиндр ⊥ П₁ — проецирующая поверхность, вспомогательная плоскость не нужна.',
-   tags:['собирательная проекция','видимость'], keys:'пересечение прямой с поверхностью цилиндр проецирующий очерковая образующая'},
-  {t:'draw', href:'anim/threads.html', icon:'thread',
-   title:'Резьбовые соединения, вариант 4', desc:'Деталь с резьбой и линза в оправе: вид + разрез, полный разрез, разнесение.',
-   tags:['резьба','разрез','сборка'], keys:'резьбовое соединение шестигранник оправа кольцо линза чертёж'},
+// ================= КАТАЛОГ =================
+// Лекция: {id, n, title, desc, topics:[…]}. id — латиницей, попадает в ссылку (#l1).
+// Тема: {href, icon, title, desc, tags, keys}. icon — ключ из ICONS (если нет — общий значок),
+// keys — синонимы для поиска (как это называют на паре).
+// Чтобы добавить тему: положить страницу в anim/ и дописать объект в topics нужной лекции.
+const LECTURES = [
+  // { id:'l1', n:1, title:'…', desc:'…', topics:[ … ] },
+
+  { id:'unsorted', n:null, title:'Пока без лекции', desc:'Готовые анимации, которые ещё не разложены по лекциям.', topics:[
+    {href:'anim/sphere-points.html', icon:'sphere',
+     title:'Сфера: проекции точек', desc:'Точки на экваторе, главном меридиане и в общем положении. Плоскость Σ ∥ П₁ и параллель.',
+     tags:['сфера','параллель','Σ ∥ П₁'], keys:'шар экватор меридиан очерк видимость точка на поверхности'},
+    {href:'anim/cone-points.html', icon:'cone',
+     title:'Конус: проекции точки', desc:'Дана D₂ — найти D₁ двумя способами: параллелью и образующей.',
+     tags:['конус','параллель','образующая'], keys:'точка на поверхности вершина основание видимость'},
+    {href:'anim/two-lines.html', icon:'twolines',
+     title:'Взаимное положение двух прямых', desc:'Скрещивающиеся, пересекающиеся, параллельные — как отличить по эпюру.',
+     tags:['скрещивающиеся','конкурирующие точки'], keys:'параллельные пересекающиеся видимость линии связи'},
+    {href:'anim/profile-line.html', icon:'profile',
+     title:'Профильная прямая', desc:'Почему двух проекций мало и как помогает П₃. Ловушка с точкой C.',
+     tags:['П₃','н.в.','α + β = 90°'], keys:'профильная плоскость натуральная величина углы наклона принадлежность точки прямой'},
+    {href:'anim/right-triangle.html', icon:'triangle',
+     title:'Метод прямоугольного треугольника', desc:'Почему гипотенуза равна натуральной величине отрезка. Углы α и β.',
+     tags:['н.в. отрезка','Δz','Δy','α','β'], keys:'натуральная величина длина отрезка угол наклона к плоскости проекций'},
+    {href:'anim/line-plane.html', icon:'plane',
+     title:'Прямая и плоскость общего положения', desc:'Точка K = l ∩ ABC через вспомогательную проецирующую плоскость Γ.',
+     tags:['Γ ⊥ П₁','точка встречи','видимость'], keys:'пересечение прямой с плоскостью треугольник конкурирующие точки посредник'},
+    {href:'anim/line-pyramid.html', icon:'pyramid',
+     title:'Прямая и пирамида', desc:'Сечение плоскостью Γ ⊥ П₂, точки входа и выхода M и N.',
+     tags:['сечение','точки входа и выхода'], keys:'пересечение прямой с многогранником пирамида видимость фронтально-проецирующая'},
+    {href:'anim/line-cylinder.html', icon:'cylinder',
+     title:'Прямая и цилиндр', desc:'Цилиндр ⊥ П₁ — проецирующая поверхность, вспомогательная плоскость не нужна.',
+     tags:['собирательная проекция','видимость'], keys:'пересечение прямой с поверхностью цилиндр проецирующий очерковая образующая'},
+  ]},
 ];
 
 // ---------- схематичные иконки (линии чертежа) ----------
@@ -159,17 +175,24 @@ const ICONS = {
   plane:`<path d="M12 50 L34 16 L64 40 Z" ${S}/><path d="M18 18 L60 62" stroke="var(--red)" stroke-width="2" fill="none"/><circle cx="37" cy="37" r="3" fill="var(--red)"/>`,
   pyramid:`<path d="M36 12 L14 56 L44 64 L62 50 Z M36 12 L44 64" ${S}/><path d="M14 56 L62 50" ${S} ${D}/><path d="M8 30 L68 46" stroke="var(--red)" stroke-width="2" fill="none"/>`,
   cylinder:`<ellipse cx="38" cy="18" rx="18" ry="6" ${S}/><path d="M20 18v40M56 18v40" ${S}/><path d="M20 58 A18 6 0 0 0 56 58" ${S}/><path d="M20 58 A18 6 0 0 1 56 58" ${S} ${D}/><path d="M8 52 L68 26" stroke="var(--red)" stroke-width="2" fill="none"/>`,
-  thread:`<path d="M10 38h56" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="8 3 2 3" fill="none"/><path d="M14 22h44M14 54h44M14 22v32M58 22v32" ${S}/><path d="M14 26h44M14 50h44" ${S} stroke-width="1" opacity=".6"/><path d="M14 54 L22 46 M22 54 L30 46 M30 54 L38 46 M38 54 L46 46 M46 54 L54 46" ${S} stroke-width="1" opacity=".7"/>`,
+  generic:`<path d="M14 62 L38 14 L62 62" ${S} ${D}/><path d="M10 62h56" ${S}/><path d="M38 14v48" ${S} opacity=".45"/><circle cx="38" cy="40" r="3" fill="var(--red)"/>`,
 };
 
-// ---------- поиск ----------
+// ---------- данные для поиска ----------
 // нормализуем: регистр, ё→е, индексы П₁ → п1, «н.в.» → нв
 const SUB = {'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4'};
 const norm = s => s.toLowerCase().replace(/ё/g,'е').replace(/[₀-₄]/g,c=>SUB[c]).replace(/[.,:;«»()]/g,' ').replace(/\s+/g,' ').trim();
-ITEMS.forEach(it => it.hay = norm([it.title,it.desc,it.tags.join(' '),it.keys,it.tags.join(' ').replace(/\./g,'')].join(' ')));
+const lname = L => L.n ? `Лекция ${L.n}` : L.title;
+LECTURES.sort((a,b)=>(a.n??1e9)-(b.n??1e9));
+const ALL = [];
+LECTURES.forEach(L => L.topics.forEach(it => {
+  it.lec = L;
+  it.hay = norm([it.title, it.desc, it.tags.join(' '), it.keys||'', it.tags.join(' ').replace(/\./g,''), lname(L), L.title].join(' '));
+  ALL.push(it);
+}));
 
-const esc = s => s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-// подсветка совпадений: ищем каждое слово запроса в исходном тексте без учёта регистра
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// подсветка совпадений: каждое слово запроса в исходном тексте без учёта регистра
 function hl(text, words){
   let out = esc(text);
   words.forEach(w=>{ if(w.length<2) return;
@@ -178,51 +201,74 @@ function hl(text, words){
   });
   return out;
 }
+const plural = (n,a,b,c) => { const m10=n%10, m100=n%100; return n+' '+(m10===1&&m100!==11?a:m10>=2&&m10<=4&&(m100<10||m100>=20)?b:c); };
 
-const qEl = document.getElementById('q'), list = document.getElementById('list'), chips = document.getElementById('chips');
-let topic = 'all';
-try{ topic = localStorage.getItem('eg-topic') || 'all'; }catch(e){}
+const qEl = document.getElementById('q'), list = document.getElementById('list'), crumbs = document.getElementById('crumbs');
+const currentLecture = () => LECTURES.find(L => '#'+L.id === location.hash) || null;
 
-function renderChips(matched){
-  const cnt = id => matched.filter(i=>id==='all'||i.t===id).length;
-  chips.innerHTML = [{id:'all',name:'Все'},...TOPICS].map(t=>
-    `<button data-t="${t.id}" aria-pressed="${t.id===topic}">${t.name}<span class="n">${cnt(t.id)}</span></button>`).join('');
+function cardHTML(it, hw, showWhere){
+  return `<a class="card" href="${it.href}">
+    <svg class="ico" viewBox="0 0 76 76" aria-hidden="true">${ICONS[it.icon]||ICONS.generic}</svg>
+    <div class="body">
+      ${showWhere?`<span class="where">${esc(lname(it.lec))}</span>`:''}
+      <h3>${hl(it.title,hw)}</h3>
+      <p>${hl(it.desc,hw)}</p>
+      <div class="tags">${it.tags.map(g=>`<span>${hl(g,hw)}</span>`).join('')}</div>
+    </div>
+  </a>`;
 }
+
 function render(){
-  const raw = qEl.value, words = norm(raw).split(' ').filter(Boolean);
-  const matched = ITEMS.filter(it => words.every(w => it.hay.includes(w)));
-  renderChips(matched);
-  const shown = matched.filter(it => topic==='all' || it.t===topic);
+  const raw = qEl.value.trim(), words = norm(raw).split(' ').filter(Boolean);
   const hw = raw.toLowerCase().split(/\s+/).filter(Boolean);
-  if(!shown.length){
-    list.innerHTML = `<div class="empty">Ничего не нашлось по запросу «${esc(raw)}»${topic!=='all'?' в этом разделе':''}. <button id="reset">Сбросить поиск</button></div>`;
-    document.getElementById('reset').onclick = ()=>{ qEl.value=''; topic='all'; save(); render(); qEl.focus(); };
+  const L = currentLecture();
+
+  // режим поиска — по всем лекциям, результаты сгруппированы по лекциям
+  if(words.length){
+    crumbs.innerHTML = `<a href="#">Все лекции</a><span class="sep">/</span><span class="here">Поиск</span>`;
+    const found = ALL.filter(it => words.every(w => it.hay.includes(w)));
+    if(!found.length){
+      list.innerHTML = `<div class="empty">Ничего не нашлось по запросу «${esc(raw)}». <button id="reset" type="button">Сбросить поиск</button></div>`;
+      document.getElementById('reset').onclick = ()=>{ qEl.value=''; render(); qEl.focus(); };
+      return;
+    }
+    list.innerHTML = LECTURES.map(Lc=>{
+      const its = found.filter(i=>i.lec===Lc); if(!its.length) return '';
+      return `<section><h2><a href="#${Lc.id}">${esc(lname(Lc))}${Lc.n?' · '+esc(Lc.title):''}</a><small>${its.length}</small></h2>
+        <div class="grid">${its.map(it=>cardHTML(it,hw,false)).join('')}</div></section>`;
+    }).join('');
     return;
   }
-  list.innerHTML = TOPICS.map(t=>{
-    const its = shown.filter(i=>i.t===t.id); if(!its.length) return '';
-    return `<section><h2>${t.name}<small>${its.length}</small></h2><div class="grid">${its.map(it=>`
-      <a class="card" href="${it.href}">
-        <svg class="ico" viewBox="0 0 76 76" aria-hidden="true">${ICONS[it.icon]}</svg>
-        <div class="body">
-          <h3>${hl(it.title,hw)}</h3>
-          <p>${hl(it.desc,hw)}</p>
-          <div class="tags">${it.tags.map(g=>`<span>${hl(g,hw)}</span>`).join('')}</div>
-        </div>
-      </a>`).join('')}</div></section>`;
-  }).join('');
-}
-function save(){ try{ localStorage.setItem('eg-topic',topic); }catch(e){} }
 
-chips.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; topic=b.dataset.t; save(); render(); });
+  // открыта папка лекции — её темы
+  if(L){
+    crumbs.innerHTML = `<a href="#">← Все лекции</a><span class="sep">/</span><span class="here">${esc(lname(L))}</span>`;
+    list.innerHTML = `<section><h2>${esc(L.n ? `Лекция ${L.n}. ${L.title}` : L.title)}<small>${plural(L.topics.length,'тема','темы','тем')}</small></h2>
+      ${L.desc?`<p class="lead">${esc(L.desc)}</p>`:''}
+      ${L.topics.length ? `<div class="grid">${L.topics.map(it=>cardHTML(it,[],false)).join('')}</div>`
+                        : `<div class="empty">В этой лекции пока нет тем.</div>`}</section>`;
+    return;
+  }
+
+  // главная — папки лекций
+  crumbs.innerHTML = `<span class="here">Все лекции</span>`;
+  list.innerHTML = `<section><div class="grid">${LECTURES.map(Lc=>`
+    <a class="folder" href="#${Lc.id}" data-tab="${esc(Lc.n?'ЛЕКЦИЯ '+Lc.n:'ПАПКА')}">
+      <h3>${esc(Lc.title)}</h3>
+      <ul>${Lc.topics.slice(0,4).map(t=>`<li>${esc(t.title)}</li>`).join('')}${Lc.topics.length>4?`<li>и ещё ${Lc.topics.length-4}</li>`:''}</ul>
+      <span class="count">${plural(Lc.topics.length,'тема','темы','тем')}</span>
+    </a>`).join('')}</div></section>`;
+}
+
+window.addEventListener('hashchange', ()=>{ qEl.value=''; render(); window.scrollTo(0,0); });
 qEl.addEventListener('input', render);
 qEl.addEventListener('keydown', e=>{
   if(e.key==='Enter'){ const a=list.querySelector('a.card'); if(a) location.href=a.href; }   // Enter — открыть первую найденную
   if(e.key==='Escape'){ qEl.value=''; render(); }
 });
 document.addEventListener('keydown', e=>{ if(e.key==='/' && document.activeElement!==qEl){ e.preventDefault(); qEl.focus(); } });
-document.getElementById('total').textContent = ITEMS.length;
-document.getElementById('sections').textContent = TOPICS.length;
+document.getElementById('nLect').textContent = LECTURES.filter(L=>L.n).length;
+document.getElementById('nTopics').textContent = ALL.length;
 render();
 </script>
 </body>
