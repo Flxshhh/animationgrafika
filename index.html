@@ -280,7 +280,10 @@ function render(){
   // режим поиска — по всем лекциям, результаты сгруппированы по лекциям
   if(words.length){
     crumbs.innerHTML = `<a href="#">Все лекции</a><span class="sep">/</span><span class="here">Поиск</span>`;
-    const found = ALL.filter(it => words.every(w => it.hay.includes(w)));
+    // запрос вида «2.3» ищет номер темы точно, остальное — по словам
+    const numQ = raw.match(/^\d+(\.\d+)?$/);
+    const found = numQ ? ALL.filter(it => it.num===raw || (it.num||'').startsWith(raw+'.') || (!numQ[1] && it.lec.n===+raw))
+                       : ALL.filter(it => words.every(w => it.hay.includes(w)));
     qCount.textContent = found.length ? `найдено: ${plural(found.length,'тема','темы','тем')}` : 'ничего не найдено';
     if(!found.length){
       const sugg=['видимость','натуральная величина','П₃','конус','эпюр'];
