@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сфера: проекции точек на П₁ и П₂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64; --accent:#D2484F;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150;
+    --p2:#6AA3E3; --p1:#62BF88; --accent:#E86A70; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150;
+  --p2:#6AA3E3; --p1:#62BF88; --accent:#E86A70; color-scheme: dark;
+}
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"PT Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{
+  background:var(--panel); border-top:1px solid var(--rule);
+  padding:12px 16px 14px; max-height:46vh; overflow:auto;
+}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{
+  font:inherit;font-size:.92rem;color:var(--ink);background:transparent;
+  border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer
+}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.fold{display:flex;align-items:center;gap:10px;width:100%}
+.fold label{font-size:.92rem;white-space:nowrap}
+.fold input{flex:1;accent-color:var(--p1)}
+.toggles label{font-size:.9rem;display:flex;gap:6px;align-items:center;margin-right:10px}
+details{border-top:1px solid var(--rule);padding-top:8px}
+summary{cursor:pointer;font-weight:700;font-size:.95rem}
+details p{margin:6px 0;font-size:.9rem;line-height:1.5;max-width:70ch}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px;vertical-align:baseline}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Сфера в ортогональных проекциях</h1>
+  <p>Точки на поверхности сферы и их проекции на П₁ (горизонтальная) и П₂ (фронтальная)</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Вид на П₂</button>
+    <button data-view="top" aria-pressed="false">Вид на П₁</button>
+    <button data-view="epure" aria-pressed="false">Эпюр</button>
+  </div>
+  <div class="row fold">
+    <label for="fold">Поворот П₁: <span id="foldVal">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row toggles">
+    <label><input type="checkbox" id="tSphere" checked> Сфера и точки в пространстве</label>
+    <label><input type="checkbox" id="tSigma" checked> Плоскость Σ ∥ П₁</label>
+    <label><input type="checkbox" id="tA2" checked> Вторая точка A′</label>
+  </div>
+  <details>
+    <summary>Как построены точки</summary>
+    <p><span class="dot" style="background:#D2484F"></span><b>A — на экваторе.</b> A₂ лежит на горизонтальной оси фронтальной проекции, значит A₁ лежит на очерке горизонтальной проекции (экватор проецируется на П₁ в натуральную величину). Решений два: A (спереди, A₁ ниже оси на эпюре) и A′ (сзади, A₁′ выше оси). На П₂ они совпадают, A′₂ невидима.</p>
+    <p><span class="dot" style="background:#8A5CC8"></span><b>B — на главном меридиане.</b> B₂ лежит на очерке фронтальной проекции, значит B₁ лежит на горизонтальной оси горизонтальной проекции.</p>
+    <p><span class="dot" style="background:#C08A1A"></span><b>C — общего положения.</b> Через C₂ проводим след Σ₂ плоскости Σ ∥ П₁. Σ режет сферу по окружности (параллели) радиуса r, которая на П₁ проецируется в натуральную величину. C₁ — на этой окружности, на линии связи.</p>
+    <p>Ползунок «Поворот П₁» поворачивает горизонтальную плоскость вокруг оси x на 90° — так из пространственной модели получается эпюр Монжа, а линии связи становятся вертикальными.</p>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---------- параметры модели (координаты Монжа: x, y — к наблюдателю, z — вверх) ----------
+  const R = 1.5, yO = 2.6, zO = 2.6;        // радиус и центр сферы
+  const h = 0.9;                             // высота Σ над экватором
+  const r = Math.sqrt(R*R - h*h);            // радиус параллели (сечения Σ)
+  const PLANE = 5.6, HALF_X = 3.3;
+  const deg = Math.PI/180;
+
+  // three.js: X = x, Y = z (вверх), Z = y (к наблюдателю)
+  const W = (x,y,z) => new THREE.Vector3(x, z, y);
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(5,10,8); scene.add(dl);
+
+  const inkMats = [];
+  function lineMat(color, dashed, opacity=1, isInk=false){
+    const m = dashed
+      ? new THREE.LineDashedMaterial({color, dashSize:0.14, gapSize:0.09, transparent:true, opacity})
+      : new THREE.LineBasicMaterial({color, transparent:true, opacity});
+    if(isInk) inkMats.push(m);
+    return m;
+  }
+  function seg(a, b, mat){
+    const g = new THREE.BufferGeometry().setFromPoints([a.clone(), b.clone()]);
+    const l = new THREE.Line(g, mat);
+    if(mat.isLineDashedMaterial) l.computeLineDistances();
+    return l;
+  }
+  function setSeg(l, a, b){
+    const p = l.geometry.attributes.position;
+    p.setXYZ(0,a.x,a.y,a.z); p.setXYZ(1,b.x,b.y,b.z); p.needsUpdate = true;
+    l.geometry.computeBoundingSphere();
+    if(l.material.isLineDashedMaterial) l.computeLineDistances();
+  }
+  // окружность: plane 'xy' (вертикальная, параллельна П₂) или 'xz' (горизонтальная)
+  function circle(c, rad, plane, mat){
+    const pts = [];
+    for(let i=0;i<=128;i++){
+      const t = i/128*Math.PI*2, u = Math.cos(t)*rad, v = Math.sin(t)*rad;
+      pts.push(plane==='xy' ? new THREE.Vector3(c.x+u, c.y+v, c.z) : new THREE.Vector3(c.x+u, c.y, c.z+v));
+    }
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+    if(mat.isLineDashedMaterial) l.computeLineDistances();
+    return l;
+  }
+  function dot(color, size=0.075){
+    return new THREE.Mesh(new THREE.SphereGeometry(size, 16, 12), new THREE.MeshBasicMaterial({color}));
+  }
+  function label(text, color, scale=0.5){
+    const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+    const g = c.getContext('2d');
+    g.font = '700 76px "PT Sans", Arial, sans-serif';
+    g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, 128, 66);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false, transparent:true}));
+    s.scale.set(scale*2, scale, 1); s.renderOrder = 20;
+    return s;
+  }
+
+  function build(){
+    const INK = css('--ink'), P1C = css('--p1'), P2C = css('--p2');
+    const COL = {A:'#D2484F', B:'#8A5CC8', C:'#C08A1A'};
+
+    // ---------- плоскость П₂ (фронтальная, y = 0) ----------
+    const p2g = new THREE.Group(); scene.add(p2g);
+    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2, PLANE),
+      new THREE.MeshBasicMaterial({color:P2C, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    p2.position.set(0, PLANE/2, 0); p2g.add(p2);
+    const e2 = new THREE.LineSegments(new THREE.EdgesGeometry(p2.geometry), lineMat(P2C,false,0.6));
+    e2.position.copy(p2.position); p2g.add(e2);
+    const l2 = label('Π₂', P2C, 0.55); l2.position.set(-HALF_X+0.45, PLANE-0.35, 0.02); p2g.add(l2);
+    // очерк фронтальной проекции (главный меридиан) и центровые линии
+    p2g.add(circle(new THREE.Vector3(0, zO, 0.005), R, 'xy', lineMat(INK,false,1,true)));
+    p2g.add(seg(new THREE.Vector3(-R-0.4, zO, 0.005), new THREE.Vector3(R+0.4, zO, 0.005), lineMat(INK,true,0.55,true)));
+    p2g.add(seg(new THREE.Vector3(0, zO-R-0.4, 0.005), new THREE.Vector3(0, zO+R+0.4, 0.005), lineMat(INK,true,0.55,true)));
+
+    // ---------- плоскость П₁ (горизонтальная, z = 0), поворачивается вокруг оси x ----------
+    const p1g = new THREE.Group(); scene.add(p1g);
+    const p1 = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2, PLANE),
+      new THREE.MeshBasicMaterial({color:P1C, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    p1.rotation.x = -Math.PI/2; p1.position.set(0, 0, PLANE/2); p1g.add(p1);
+    const e1 = new THREE.LineSegments(new THREE.EdgesGeometry(p1.geometry), lineMat(P1C,false,0.6));
+    e1.rotation.copy(p1.rotation); e1.position.copy(p1.position); p1g.add(e1);
+    const l1 = label('Π₁', P1C, 0.55); l1.position.set(-HALF_X+0.45, 0.02, PLANE-0.35); p1g.add(l1);
+    // очерк горизонтальной проекции (экватор) и центровые линии
+    p1g.add(circle(new THREE.Vector3(0, 0.005, yO), R, 'xz', lineMat(INK,false,1,true)));
+    p1g.add(seg(new THREE.Vector3(-R-0.4, 0.005, yO), new THREE.Vector3(R+0.4, 0.005, yO), lineMat(INK,true,0.55,true)));
+    p1g.add(seg(new THREE.Vector3(0, 0.005, yO-R-0.4), new THREE.Vector3(0, 0.005, yO+R+0.4), lineMat(INK,true,0.55,true)));
+
+    // ось x (линия пересечения П₁ и П₂)
+    scene.add(seg(new THREE.Vector3(-HALF_X, 0, 0), new THREE.Vector3(HALF_X, 0, 0), lineMat(INK,false,1,true)));
+    const lx = label('x', INK, 0.45); lx.position.set(HALF_X+0.3, 0, 0); scene.add(lx);
+
+    // ---------- сфера в пространстве ----------
+    const space = new THREE.Group(); scene.add(space);
+    const sph = new THREE.Mesh(new THREE.SphereGeometry(R, 48, 32),
+      new THREE.MeshPhongMaterial({color:0x9fb3c8, transparent:true, opacity:0.28, depthWrite:false, shininess:40}));
+    sph.position.copy(W(0, yO, zO)); space.add(sph);
+    space.add(circle(W(0,yO,zO), R, 'xz', lineMat(P1C,true,0.9)));   // экватор → очерк на П₁
+    space.add(circle(W(0,yO,zO), R, 'xy', lineMat(P2C,true,0.9)));   // главный меридиан → очерк на П₂
+
+    // ---------- плоскость Σ ∥ П₁ и параллель ----------
+    const sigma3d = new THREE.Group(); scene.add(sigma3d);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*1.6, 3.6),
+      new THREE.MeshBasicMaterial({color:COL.C, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    sg.rotation.x = -Math.PI/2; sg.position.copy(W(0, yO, zO+h)); sigma3d.add(sg);
+    sigma3d.add(circle(W(0,yO,zO+h), r, 'xz', lineMat(COL.C,false,0.95)));
+    const ls = label('Σ', COL.C, 0.5); ls.position.copy(W(-HALF_X*0.8+0.3, yO+1.6, zO+h)); sigma3d.add(ls);
+
+    const sigmaProj = new THREE.Group();   // след Σ₂ на П₂ и параллель на П₁
+    sigmaProj.add(seg(new THREE.Vector3(-HALF_X+0.2, zO+h, 0.01), new THREE.Vector3(R+0.6, zO+h, 0.01), lineMat(COL.C,false,1)));
+    const ls2 = label('Σ₂', COL.C, 0.45); ls2.position.set(-HALF_X+0.55, zO+h+0.25, 0.02); sigmaProj.add(ls2);
+    p2g.add(sigmaProj);
+    const sigmaP1 = circle(new THREE.Vector3(0, 0.01, yO), r, 'xz', lineMat(COL.C,false,1));
+    const lr = label('r', COL.C, 0.4); lr.position.set(-r*0.5, 0.02, yO-0.25);
+    p1g.add(sigmaP1); p1g.add(lr);
+
+    // ---------- точки ----------
+    const pts = [
+      {n:'A',  s2:'A₂',  s1:'A₁',  c:COL.A, p:[0.9, yO+1.2, zO]},
+      {n:'A′', s2:'A′₂', s1:'A₁′', c:COL.A, p:[0.9, yO-1.2, zO], extra:true},
+      {n:'B',  s2:'B₂',  s1:'B₁',  c:COL.B, p:[R*Math.cos(35*deg), yO, zO+R*Math.sin(35*deg)]},
+      {n:'C',  s2:'C₂',  s1:'C₁',  c:COL.C, p:[-0.7, yO+Math.sqrt(r*r-0.49), zO+h]},
+    ];
+    const extra = new THREE.Group(); scene.add(extra);
+    const extraP1 = new THREE.Group(); p1g.add(extraP1);
+    const extraP2 = new THREE.Group(); p2g.add(extraP2);
+
+    pts.forEach(o=>{
+      const [x,y,z] = o.p;
+      const host3 = o.extra ? extra : space;
+      const hostP1 = o.extra ? extraP1 : p1g;
+      const hostP2 = o.extra ? extraP2 : p2g;
+      const linkHost = o.extra ? extra : scene;
+
+      o.w = W(x,y,z);
+      const m = dot(o.c, 0.09); m.position.copy(o.w); host3.add(m);
+      const lb = label(o.n, o.c); lb.position.copy(o.w).add(new THREE.Vector3(0.3, 0.25, 0)); host3.add(lb);
+
+      o.w2 = new THREE.Vector3(x, z, 0.02);                 // фронтальная проекция
+      const m2 = dot(o.c); m2.position.copy(o.w2); hostP2.add(m2);
+      const lb2 = label(o.s2, o.c, 0.42); lb2.position.copy(o.w2).add(new THREE.Vector3(o.extra?-0.35:0.38, o.extra?-0.22:0.22, 0)); hostP2.add(lb2);
+
+      o.m1 = dot(o.c); o.m1.position.set(x, 0.02, y);       // горизонтальная проекция (в системе П₁)
+      hostP1.add(o.m1);
+      const lb1 = label(o.s1, o.c, 0.42); lb1.position.set(x+0.38, 0.03, y+0.18); hostP1.add(lb1);
+
+      o.xa = new THREE.Vector3(x, 0, 0);                    // точка на оси x
+      o.L2 = seg(o.w, o.w2, lineMat(P2C, true, 0.85)); host3.add(o.L2);   // проецирующая на П₂
+      o.L1 = seg(o.w, o.w, lineMat(P1C, true, 0.85)); host3.add(o.L1);    // проецирующая на П₁
+      o.Lk2 = seg(o.w2, o.xa, lineMat(INK, false, 0.55, true)); linkHost.add(o.Lk2); // линия связи П₂ → x
+      o.Lk1 = seg(o.xa, o.xa, lineMat(INK, false, 0.55, true)); linkHost.add(o.Lk1); // линия связи x → П₁
+    });
+
+    return {p1g, space, sigma3d, sigmaProj, sigmaP1, lr, extra, extraP1, extraP2, pts};
+  }
+
+  // ---------- камера: простое орбитальное управление ----------
+  const VIEWS = {
+    iso:   {th: 0.72, ph: 1.12, r: 15,   t:[0, 2.0, 2.2], fold: 0},
+    front: {th: 0,    ph: Math.PI/2, r: 14, t:[0, 2.6, 0], fold: 0},
+    top:   {th: 0,    ph: 0.001, r: 14, t:[0, 0, 2.6], fold: 0},
+    epure: {th: 0,    ph: Math.PI/2, r: 17.5, t:[0, 0, 0], fold: 90},
+  };
+  const cur = {...VIEWS.iso, t:[...VIEWS.iso.t]};
+  const tgt = {...VIEWS.iso, t:[...VIEWS.iso.t]};
+
+  function placeCamera(){
+    const s = Math.sin(cur.ph);
+    camera.position.set(cur.t[0] + cur.r*s*Math.sin(cur.th), cur.t[1] + cur.r*Math.cos(cur.ph), cur.t[2] + cur.r*s*Math.cos(cur.th));
+    camera.up.set(0,1,0);
+    if(cur.ph < 0.01) camera.up.set(0,0,-1);
+    camera.lookAt(cur.t[0], cur.t[1], cur.t[2]);
+  }
+
+  const pointers = new Map(); let pinch0 = 0, r0 = 0;
+  canvas.addEventListener('pointerdown', e=>{ canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pointers.size===2){ const [a,b]=[...pointers.values()]; pinch0 = Math.hypot(a.x-b.x,a.y-b.y); r0 = tgt.r; } });
+  canvas.addEventListener('pointermove', e=>{
+    if(!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId); const dx = e.clientX-prev.x, dy = e.clientY-prev.y;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pointers.size===1){
+      tgt.th -= dx*0.008; tgt.ph = Math.min(Math.PI-0.05, Math.max(0.001, tgt.ph - dy*0.008));
+      cur.th = tgt.th; cur.ph = tgt.ph; markView(null);
+    } else if(pointers.size===2){
+      const [a,b]=[...pointers.values()]; const d = Math.hypot(a.x-b.x,a.y-b.y);
+      if(pinch0>0){ tgt.r = Math.min(40, Math.max(6, r0*pinch0/d)); }
+    }
+  });
+  const up = e=>{ pointers.delete(e.pointerId); if(pointers.size<2) pinch0 = 0; };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', e=>{ e.preventDefault(); tgt.r = Math.min(40, Math.max(6, tgt.r*(1+Math.sign(e.deltaY)*0.08))); }, {passive:false});
+
+  // ---------- интерфейс ----------
+  const foldIn = document.getElementById('fold'), foldVal = document.getElementById('foldVal');
+  foldIn.addEventListener('input', ()=>{ tgt.fold = +foldIn.value; foldVal.textContent = foldIn.value+'°'; });
+  function markView(name){
+    document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.view===name)));
+  }
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click', ()=>{
+    const v = VIEWS[b.dataset.view];
+    tgt.th = v.th; tgt.ph = v.ph; tgt.r = v.r; tgt.t = [...v.t]; tgt.fold = v.fold;
+    // кратчайший поворот по азимуту
+    while(cur.th - tgt.th > Math.PI) cur.th -= 2*Math.PI;
+    while(tgt.th - cur.th > Math.PI) cur.th += 2*Math.PI;
+    foldIn.value = v.fold; foldVal.textContent = v.fold+'°';
+    markView(b.dataset.view);
+  }));
+
+  function resize(){
+    const st = document.getElementById('stage');
+    const w = st.clientWidth, h2 = st.clientHeight;
+    renderer.setSize(w, h2, false); camera.aspect = w/h2; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    const M = build();
+    const tS = document.getElementById('tSphere'), tG = document.getElementById('tSigma'), tA = document.getElementById('tA2');
+    const applyToggles = ()=>{
+      M.space.visible = tS.checked;
+      M.sigma3d.visible = tG.checked && tS.checked;
+      M.sigmaProj.visible = M.sigmaP1.visible = M.lr.visible = tG.checked;
+      M.extra.visible = M.extraP1.visible = M.extraP2.visible = tA.checked;
+      // у A′ пространственная часть подчиняется и общему переключателю
+      M.pts.filter(o=>o.extra).forEach(o=>{ o.L1.visible = o.L2.visible = tS.checked; });
+      M.extra.children.forEach(ch=>{ if(ch.isMesh || ch.isSprite) ch.visible = tS.checked; });
+    };
+    [tS,tG,tA].forEach(t=>t.addEventListener('change', applyToggles)); applyToggles();
+
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener && mq.addEventListener('change', ()=>{ const c = css('--ink'); inkMats.forEach(m=>m.color.set(c)); });
+
+    const tmp = new THREE.Vector3();
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function frame(){
+      const k = reduce ? 1 : 0.12;
+      cur.th += (tgt.th-cur.th)*k; cur.ph += (tgt.ph-cur.ph)*k; cur.r += (tgt.r-cur.r)*k;
+      for(let i=0;i<3;i++) cur.t[i] += (tgt.t[i]-cur.t[i])*k;
+      cur.fold += (tgt.fold-cur.fold)*k;
+
+      M.p1g.rotation.x = cur.fold*deg;     // поворот П₁ вокруг оси x вниз
+      M.p1g.updateMatrixWorld(true);
+      const fade = Math.max(0, 1 - cur.fold/60);
+      M.pts.forEach(o=>{
+        o.m1.getWorldPosition(tmp);
+        setSeg(o.L1, o.w, tmp); o.L1.material.opacity = 0.85*fade;
+        setSeg(o.Lk1, o.xa, tmp);
+      });
+      placeCamera();
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    resize(); frame();
+  }
+
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([ready, new Promise(r=>setTimeout(r, 1500))]).then(start);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Конус: проекции точки на П₁ и П₂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150;
+    --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150;
+  --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark;
+}
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:46vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.fold{display:flex;align-items:center;gap:10px;width:100%}
+.fold label{font-size:.92rem;white-space:nowrap}
+.fold input{flex:1;accent-color:var(--p1)}
+.toggles label{font-size:.9rem;display:flex;gap:6px;align-items:center;margin-right:10px}
+details{border-top:1px solid var(--rule);padding-top:8px}
+summary{cursor:pointer;font-weight:700;font-size:.95rem}
+details p{margin:6px 0;font-size:.9rem;line-height:1.5;max-width:70ch}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:4px}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Конус в ортогональных проекциях</h1>
+  <p>Дана D₂ — найти D₁ способом параллели и способом образующей</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Вид на П₂</button>
+    <button data-view="top" aria-pressed="false">Вид на П₁</button>
+    <button data-view="epure" aria-pressed="false">Эпюр</button>
+  </div>
+  <div class="row fold">
+    <label for="fold">Поворот П₁: <span id="foldVal">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row toggles">
+    <label><input type="checkbox" id="tSpace" checked> Конус и точки в пространстве</label>
+    <label><input type="checkbox" id="tPar" checked> Способ параллели (Σ ∥ П₁)</label>
+    <label><input type="checkbox" id="tGen"> Способ образующей</label>
+    <label><input type="checkbox" id="tExtra" checked> Вторая точка D′</label>
+  </div>
+  <details>
+    <summary>Как найти D₁</summary>
+    <p><span class="dot" style="background:#C08A1A"></span><b>Способ параллели.</b> Через D₂ проводим след Σ₂ плоскости Σ ∥ П₁. Σ режет конус по окружности. Её радиус r снимаем на П₂: от оси до образующей по линии Σ₂. На П₁ проводим окружность радиуса r из S₁ и опускаем линию связи из D₂ — точки пересечения и есть D₁ и D₁′.</p>
+    <p><span class="dot" style="background:#8A5CC8"></span><b>Способ образующей.</b> На П₂ проводим S₂D₂ до основания — получаем M₂. По линии связи находим M₁ на окружности основания (две точки). Проводим S₁M₁ — D₁ лежит на ней, на линии связи из D₂.</p>
+    <p><span class="dot" style="background:#D2484F"></span><b>Видимость.</b> D₂ видима, значит D — на передней половине конуса, D₁ на эпюре ниже горизонтальной оси. D′ — на задней половине, D′₂ на П₂ невидима. На П₁ видны обе: боковая поверхность конуса вершиной вверх видна сверху целиком.</p>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---------- параметры (координаты Монжа: x; y — к наблюдателю; z — вверх) ----------
+  const Rb = 1.6, H = 4.0;            // радиус основания и высота конуса
+  const yO = 2.6, zb = 0.6;           // ось конуса x=0, y=yO; основание на высоте zb
+  const zS = zb + H;                  // вершина S
+  const zD = zb + 0.5*H, xD = -0.45;  // D₂ задана на доске: левее оси, на середине высоты
+  const rD = Rb*(zS - zD)/H;          // радиус параллели через D
+  const dy = Math.sqrt(rD*rD - xD*xD);
+  const t = (zS - zb)/(zS - zD);      // продолжение образующей S→D до основания
+  const Mx = t*xD, Mdy = t*dy;
+  const PLANE_V = 5.8, PLANE_H = 5.6, HALF_X = 3.3;
+  const deg = Math.PI/180;
+  const W = (x,y,z) => new THREE.Vector3(x, z, y);   // Монж → three.js
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(5,10,8); scene.add(dl);
+
+  const inkMats = [];
+  function lineMat(color, dashed, opacity=1, isInk=false){
+    const m = dashed ? new THREE.LineDashedMaterial({color, dashSize:0.14, gapSize:0.09, transparent:true, opacity})
+                     : new THREE.LineBasicMaterial({color, transparent:true, opacity});
+    if(isInk) inkMats.push(m);
+    return m;
+  }
+  function seg(a, b, mat){
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.clone(), b.clone()]), mat);
+    if(mat.isLineDashedMaterial) l.computeLineDistances();
+    return l;
+  }
+  function setSeg(l, a, b){
+    const p = l.geometry.attributes.position;
+    p.setXYZ(0,a.x,a.y,a.z); p.setXYZ(1,b.x,b.y,b.z); p.needsUpdate = true;
+    l.geometry.computeBoundingSphere();
+    if(l.material.isLineDashedMaterial) l.computeLineDistances();
+  }
+  function poly(points, mat){
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), mat);
+    if(mat.isLineDashedMaterial) l.computeLineDistances();
+    return l;
+  }
+  function circle(c, rad, mat){   // горизонтальная окружность
+    const pts = [];
+    for(let i=0;i<=128;i++){ const a = i/128*Math.PI*2; pts.push(new THREE.Vector3(c.x+Math.cos(a)*rad, c.y, c.z+Math.sin(a)*rad)); }
+    return poly(pts, mat);
+  }
+  function dot(color, size=0.075){ return new THREE.Mesh(new THREE.SphereGeometry(size,16,12), new THREE.MeshBasicMaterial({color})); }
+  function label(text, color, scale=0.5){
+    const c = document.createElement('canvas'); c.width=256; c.height=128;
+    const g = c.getContext('2d'); g.font='700 76px "PT Sans", Arial, sans-serif';
+    g.fillStyle=color; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,128,66);
+    const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false, transparent:true}));
+    s.scale.set(scale*2, scale, 1); s.renderOrder = 20; return s;
+  }
+
+  function build(){
+    const INK = css('--ink'), P1C = css('--p1'), P2C = css('--p2');
+    const COL = {S:'#5C7A99', D:'#D2484F', M:'#8A5CC8', P:'#C08A1A'};
+
+    const p2g = new THREE.Group(); scene.add(p2g);
+    const p1g = new THREE.Group(); scene.add(p1g);
+
+    // набор объектов, включаемый одним переключателем: пространство / П₁ / П₂ / линии связи
+    const mkSet = () => { const s = {s:new THREE.Group(), p1:new THREE.Group(), p2:new THREE.Group(), k:new THREE.Group()};
+      scene.add(s.s); p1g.add(s.p1); p2g.add(s.p2); scene.add(s.k); return s; };
+    const sets = {base:mkSet(), extra:mkSet(), par:mkSet(), gen:mkSet(), genExtra:mkSet()};
+
+    // ---------- П₂ ----------
+    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2, PLANE_V),
+      new THREE.MeshBasicMaterial({color:P2C, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    p2.position.set(0, PLANE_V/2, 0); p2g.add(p2);
+    const e2 = new THREE.LineSegments(new THREE.EdgesGeometry(p2.geometry), lineMat(P2C,false,0.6)); e2.position.copy(p2.position); p2g.add(e2);
+    const l2 = label('Π₂', P2C, 0.55); l2.position.set(-HALF_X+0.45, PLANE_V-0.35, 0.02); p2g.add(l2);
+    // фронтальный очерк конуса — треугольник
+    p2g.add(poly([new THREE.Vector3(-Rb,zb,0.005), new THREE.Vector3(0,zS,0.005), new THREE.Vector3(Rb,zb,0.005), new THREE.Vector3(-Rb,zb,0.005)], lineMat(INK,false,1,true)));
+    p2g.add(seg(new THREE.Vector3(0,zb-0.4,0.005), new THREE.Vector3(0,zS+0.3,0.005), lineMat(INK,true,0.55,true)));
+
+    // ---------- П₁ (поворачивается вокруг x) ----------
+    const p1 = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2, PLANE_H),
+      new THREE.MeshBasicMaterial({color:P1C, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    p1.rotation.x = -Math.PI/2; p1.position.set(0,0,PLANE_H/2); p1g.add(p1);
+    const e1 = new THREE.LineSegments(new THREE.EdgesGeometry(p1.geometry), lineMat(P1C,false,0.6));
+    e1.rotation.copy(p1.rotation); e1.position.copy(p1.position); p1g.add(e1);
+    const l1 = label('Π₁', P1C, 0.55); l1.position.set(-HALF_X+0.45, 0.02, PLANE_H-0.35); p1g.add(l1);
+    p1g.add(circle(new THREE.Vector3(0,0.005,yO), Rb, lineMat(INK,false,1,true)));   // очерк — основание
+    p1g.add(seg(new THREE.Vector3(-Rb-0.4,0.005,yO), new THREE.Vector3(Rb+0.4,0.005,yO), lineMat(INK,true,0.55,true)));
+    p1g.add(seg(new THREE.Vector3(0,0.005,yO-Rb-0.4), new THREE.Vector3(0,0.005,yO+Rb+0.4), lineMat(INK,true,0.55,true)));
+
+    scene.add(seg(new THREE.Vector3(-HALF_X,0,0), new THREE.Vector3(HALF_X,0,0), lineMat(INK,false,1,true)));
+    const lx = label('x', INK, 0.45); lx.position.set(HALF_X+0.3,0,0); scene.add(lx);
+
+    // ---------- конус в пространстве ----------
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(Rb, H, 64, 1, true),
+      new THREE.MeshPhongMaterial({color:0x9fb3c8, transparent:true, opacity:0.28, side:THREE.DoubleSide, depthWrite:false, shininess:30}));
+    cone.position.copy(W(0, yO, zb+H/2)); sets.base.s.add(cone);
+    sets.base.s.add(circle(W(0,yO,zb), Rb, lineMat(P1C,true,0.9)));                 // основание → очерк П₁
+    sets.base.s.add(seg(W(0,yO,zS), W(-Rb,yO,zb), lineMat(P2C,true,0.9)));         // очерковые образующие → П₂
+    sets.base.s.add(seg(W(0,yO,zS), W( Rb,yO,zb), lineMat(P2C,true,0.9)));
+
+    // ---------- способ параллели ----------
+    const par = sets.par;
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*1.4, 3.2),
+      new THREE.MeshBasicMaterial({color:COL.P, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    sg.rotation.x = -Math.PI/2; sg.position.copy(W(0,yO,zD)); par.s.add(sg);
+    par.s.add(circle(W(0,yO,zD), rD, lineMat(COL.P,false,0.95)));
+    const ls = label('Σ', COL.P, 0.5); ls.position.copy(W(-HALF_X*0.7+0.3, yO+1.4, zD)); par.s.add(ls);
+    par.p2.add(seg(new THREE.Vector3(-HALF_X+0.2,zD,0.01), new THREE.Vector3(Rb,zD,0.01), lineMat(COL.P,false,1)));
+    const ls2 = label('Σ₂', COL.P, 0.45); ls2.position.set(-HALF_X+0.55, zD+0.25, 0.02); par.p2.add(ls2);
+    par.p2.add(seg(new THREE.Vector3(0,zD-0.12,0.012), new THREE.Vector3(rD,zD-0.12,0.012), lineMat(COL.P,false,1)));
+    const lr2 = label('r', COL.P, 0.38); lr2.position.set(rD/2, zD-0.32, 0.02); par.p2.add(lr2);
+    par.p1.add(circle(new THREE.Vector3(0,0.01,yO), rD, lineMat(COL.P,false,1)));
+    const lr = label('r', COL.P, 0.38); lr.position.set(rD*0.75, 0.02, yO-rD*0.75); par.p1.add(lr);
+
+    // ---------- способ образующей ----------
+    const gen = sets.gen, genX = sets.genExtra;
+    gen.s.add(seg(W(0,yO,zS), W(Mx,yO+Mdy,zb), lineMat(COL.M,false,0.95)));
+    gen.p2.add(seg(new THREE.Vector3(0,zS,0.012), new THREE.Vector3(Mx,zb,0.012), lineMat(COL.M,false,1)));
+    gen.p1.add(seg(new THREE.Vector3(0,0.012,yO), new THREE.Vector3(Mx,0.012,yO+Mdy), lineMat(COL.M,false,1)));
+    genX.s.add(seg(W(0,yO,zS), W(Mx,yO-Mdy,zb), lineMat(COL.M,false,0.95)));
+    genX.p1.add(seg(new THREE.Vector3(0,0.012,yO), new THREE.Vector3(Mx,0.012,yO-Mdy), lineMat(COL.M,false,1)));
+
+    // ---------- точки ----------
+    const pts = [
+      {n:'S',  s2:'S₂',  s1:'S₁',  c:COL.S, p:[0, yO, zS], set:'base', o2:[0.35,0.2], o1:[0.35,-0.25]},
+      {n:'D',  s2:'D₂',  s1:'D₁',  c:COL.D, p:[xD, yO+dy, zD], set:'base', o2:[-0.38,0.22], o1:[-0.38,0.25]},
+      {n:'D′', s2:'D′₂', s1:'D₁′', c:COL.D, p:[xD, yO-dy, zD], set:'extra', o2:[-0.42,-0.22], o1:[-0.38,-0.25]},
+      {n:'M',  s2:'M₂',  s1:'M₁',  c:COL.M, p:[Mx, yO+Mdy, zb], set:'gen', o2:[-0.3,-0.25], o1:[-0.38,0.25]},
+      {n:'M′', s2:'',    s1:'M₁′', c:COL.M, p:[Mx, yO-Mdy, zb], set:'genExtra', o2:[0,0], o1:[-0.4,-0.25]},
+    ];
+    pts.forEach(o=>{
+      const st = sets[o.set]; const [x,y,z] = o.p;
+      o.w = W(x,y,z);
+      const m = dot(o.c, 0.09); m.position.copy(o.w); st.s.add(m);
+      const lb = label(o.n, o.c); lb.position.copy(o.w).add(new THREE.Vector3(0.3,0.25,0)); st.s.add(lb);
+      o.w2 = new THREE.Vector3(x, z, 0.02);
+      const m2 = dot(o.c); m2.position.copy(o.w2); st.p2.add(m2);
+      if(o.s2){ const lb2 = label(o.s2, o.c, 0.42); lb2.position.copy(o.w2).add(new THREE.Vector3(o.o2[0],o.o2[1],0)); st.p2.add(lb2); }
+      o.m1 = dot(o.c); o.m1.position.set(x, 0.02, y); st.p1.add(o.m1);
+      const lb1 = label(o.s1, o.c, 0.42); lb1.position.set(x+o.o1[0], 0.03, y+o.o1[1]); st.p1.add(lb1);
+      o.xa = new THREE.Vector3(x,0,0);
+      o.L2 = seg(o.w, o.w2, lineMat(P2C,true,0.85)); st.s.add(o.L2);
+      o.L1 = seg(o.w, o.w, lineMat(P1C,true,0.85)); st.s.add(o.L1);
+      o.Lk2 = seg(o.w2, o.xa, lineMat(INK,false,0.5,true)); st.k.add(o.Lk2);
+      o.Lk1 = seg(o.xa, o.xa, lineMat(INK,false,0.5,true)); st.k.add(o.Lk1);
+    });
+    return {p1g, sets, pts};
+  }
+
+  // ---------- камера ----------
+  const VIEWS = {
+    iso:   {th:0.72, ph:1.15, r:16,  t:[0,2.4,2.2], fold:0},
+    front: {th:0, ph:Math.PI/2, r:15, t:[0,2.9,0], fold:0},
+    top:   {th:0, ph:0.001, r:14, t:[0,0,2.6], fold:0},
+    epure: {th:0, ph:Math.PI/2, r:19, t:[0,0,0], fold:90},
+  };
+  const cur = {...VIEWS.iso, t:[...VIEWS.iso.t]};
+  const tgt = {...VIEWS.iso, t:[...VIEWS.iso.t]};
+  function placeCamera(){
+    const s = Math.sin(cur.ph);
+    camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th), cur.t[1]+cur.r*Math.cos(cur.ph), cur.t[2]+cur.r*s*Math.cos(cur.th));
+    camera.up.set(0,1,0); if(cur.ph < 0.01) camera.up.set(0,0,-1);
+    camera.lookAt(cur.t[0],cur.t[1],cur.t[2]);
+  }
+  const pointers = new Map(); let pinch0=0, r0=0;
+  canvas.addEventListener('pointerdown', e=>{ canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===2){ const [a,b]=[...pointers.values()]; pinch0=Math.hypot(a.x-b.x,a.y-b.y); r0=tgt.r; } });
+  canvas.addEventListener('pointermove', e=>{
+    if(!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId); const dx=e.clientX-prev.x, dy2=e.clientY-prev.y;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){ tgt.th -= dx*0.008; tgt.ph = Math.min(Math.PI-0.05, Math.max(0.001, tgt.ph-dy2*0.008)); cur.th=tgt.th; cur.ph=tgt.ph; markView(null); }
+    else if(pointers.size===2 && pinch0>0){ const [a,b]=[...pointers.values()]; tgt.r=Math.min(40,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y))); }
+  });
+  const up = e=>{ pointers.delete(e.pointerId); if(pointers.size<2) pinch0=0; };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', e=>{ e.preventDefault(); tgt.r=Math.min(40,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08))); }, {passive:false});
+
+  const foldIn=document.getElementById('fold'), foldVal=document.getElementById('foldVal');
+  foldIn.addEventListener('input', ()=>{ tgt.fold=+foldIn.value; foldVal.textContent=foldIn.value+'°'; });
+  function markView(name){ document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.view===name))); }
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click', ()=>{
+    const v = VIEWS[b.dataset.view];
+    tgt.th=v.th; tgt.ph=v.ph; tgt.r=v.r; tgt.t=[...v.t]; tgt.fold=v.fold;
+    while(cur.th-tgt.th>Math.PI) cur.th-=2*Math.PI;
+    while(tgt.th-cur.th>Math.PI) cur.th+=2*Math.PI;
+    foldIn.value=v.fold; foldVal.textContent=v.fold+'°'; markView(b.dataset.view);
+  }));
+  function resize(){ const st=document.getElementById('stage'); renderer.setSize(st.clientWidth, st.clientHeight, false); camera.aspect=st.clientWidth/st.clientHeight; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    const M = build();
+    const T = id=>document.getElementById(id);
+    const apply = ()=>{
+      const sp=T('tSpace').checked, pr=T('tPar').checked, gn=T('tGen').checked, ex=T('tExtra').checked;
+      const on = {base:true, extra:ex, par:pr, gen:gn, genExtra:gn&&ex};
+      for(const k in M.sets){ const s=M.sets[k]; s.s.visible = on[k]&&sp; s.p1.visible=s.p2.visible=s.k.visible=on[k]; }
+    };
+    ['tSpace','tPar','tGen','tExtra'].forEach(id=>T(id).addEventListener('change', apply)); apply();
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener && mq.addEventListener('change', ()=>{ const c=css('--ink'); inkMats.forEach(m=>m.color.set(c)); });
+
+    const tmp = new THREE.Vector3();
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k = reduce?1:0.12;
+      cur.th+=(tgt.th-cur.th)*k; cur.ph+=(tgt.ph-cur.ph)*k; cur.r+=(tgt.r-cur.r)*k;
+      for(let i=0;i<3;i++) cur.t[i]+=(tgt.t[i]-cur.t[i])*k;
+      cur.fold+=(tgt.fold-cur.fold)*k;
+      M.p1g.rotation.x = cur.fold*deg; M.p1g.updateMatrixWorld(true);
+      const fade = Math.max(0, 1-cur.fold/60);
+      M.pts.forEach(o=>{ o.m1.getWorldPosition(tmp); setSeg(o.L1,o.w,tmp); o.L1.material.opacity=0.85*fade; setSeg(o.Lk1,o.xa,tmp); });
+      placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([ready, new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>

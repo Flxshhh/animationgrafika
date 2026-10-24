@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Метод прямоугольного треугольника</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:50vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.steps button{border-style:dashed}
+.steps button[aria-pressed="true"]{border-style:solid}
+.slider{display:flex;align-items:center;gap:10px;width:100%}
+.slider label{font-size:.92rem;white-space:nowrap}
+.slider input{flex:1;accent-color:#D2484F}
+#fold{accent-color:var(--p1)}
+.toggles label{font-size:.9rem;display:flex;gap:6px;align-items:center}
+#stepText{font-size:.92rem;line-height:1.5;max-width:72ch;margin:0 0 10px;border-left:3px solid #D2484F;padding-left:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+.seg-label{font-size:.8rem;color:var(--muted);margin-right:2px}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Метод прямоугольного треугольника</h1>
+  <p>Почему гипотенуза треугольника на эпюре равна натуральной величине отрезка</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row" id="modes">
+    <span class="seg-label">Угол с плоскостью:</span>
+    <button data-mode="a" aria-pressed="true">α — с П₁ (катет Δz)</button>
+    <button data-mode="b" aria-pressed="false">β — с П₂ (катет Δy)</button>
+  </div>
+  <div class="row steps" id="steps">
+    <button data-step="1" aria-pressed="true">1. Отрезок и проекции</button>
+    <button data-step="2" aria-pressed="false">2. Треугольник в пространстве</button>
+    <button data-step="3" aria-pressed="false">3. Поворот</button>
+    <button data-step="4" aria-pressed="false">4. На плоскость проекций</button>
+  </div>
+  <p id="stepText"></p>
+  <div id="calc"></div>
+  <div class="row slider">
+    <label for="anim">Анимация: <span id="animVal">0%</span></label>
+    <input id="anim" type="range" min="0" max="100" value="0">
+  </div>
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Вид на П₂</button>
+    <button data-view="top" aria-pressed="false">Вид на П₁</button>
+    <button data-view="epure" aria-pressed="false">Эпюр</button>
+  </div>
+  <div class="row slider">
+    <label for="fold">Поворот П₁: <span id="foldVal">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row toggles">
+    <label><input type="checkbox" id="tSpace" checked> Объекты в пространстве</label>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---------- исходные данные (Монж: x; y — к наблюдателю; z — вверх) ----------
+  const V=(x,y,z)=>({x,y,z});
+  const add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z), mul=(a,k)=>V(a.x*k,a.y*k,a.z*k);
+  const dotp=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z, cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
+  const len=a=>Math.sqrt(dotp(a,a)), unit=a=>mul(a,1/len(a));
+  // как на доске: A ниже и ближе к П₂, B выше и дальше от П₂
+  const A=V(-1.8,1.0,1.0), B=V(1.4,3.6,2.6);
+  const dZ=B.z-A.z, dY=B.y-A.y, LAB=len(sub(B,A));
+
+  // Описание двух режимов. H1 — вершина с искомым углом, H2 — вершина прямого угла,
+  // M — вершина, которая поворачивается вокруг катета H1H2.
+  const MODES={
+    a:{ // α: треугольник B, A₀, A. Катет BA₀ ∥ П₁, катет A₀A = Δz
+      H1:B, H2:V(A.x,A.y,B.z), M:A, d:dZ, plane:'p1', lift:V(0,0,-B.z), sideAxis:'y',
+      nH1:'B', nH2:'A₀', nM:'A', star:'A*', ang:'α', leg:'Δz',
+      pH1:'B₁', pH2:'A₁', proj:'A₁B₁',
+    },
+    b:{ // β: треугольник A, B₀, B. Катет AB₀ ∥ П₂, катет B₀B = Δy
+      H1:A, H2:V(B.x,A.y,B.z), M:B, d:dY, plane:'p2', lift:V(0,-A.y,0), sideAxis:'z',
+      nH1:'A', nH2:'B₀', nM:'B', star:'B*', ang:'β', leg:'Δy',
+      pH1:'A₂', pH2:'B₂', proj:'A₂B₂',
+    },
+  };
+  // поворот M вокруг оси H1H2 (Родриг; v ⟂ u)
+  Object.values(MODES).forEach(m=>{
+    m.u=unit(sub(m.H1,m.H2)); m.v=sub(m.M,m.H2);
+    let w=cross(m.u,m.v); m.s = w[m.sideAxis]>0 ? 1 : -1; m.w=mul(w,m.s);
+    m.rot=th=>add(m.H2, add(mul(m.v,Math.cos(th)), mul(m.w,Math.sin(th))));
+    m.final=m.rot(Math.PI/2);
+    m.projLen=len(sub(m.H1,m.H2));
+  });
+
+  const PLANE_V=5.6, PLANE_H=5.6, HALF_X=3.6, deg=Math.PI/180;
+  const W=p=>new THREE.Vector3(p.x,p.z,p.y);
+  const on2=(p,e=0.02)=>new THREE.Vector3(p.x,p.z,e);
+  const on1=(p,e=0.02)=>new THREE.Vector3(p.x,e,p.y);
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.8));
+
+  const inkMats=[];
+  function lineMat(color,dashed,opacity=1,isInk=false){
+    const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.13,gapSize:0.09,transparent:true,opacity}):new THREE.LineBasicMaterial({color,transparent:true,opacity});
+    if(isInk) inkMats.push(m); return m;
+  }
+  function poly(points,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),mat); if(mat.isLineDashedMaterial) l.computeLineDistances(); return l;}
+  const seg=(a,b,mat)=>poly([a.clone(),b.clone()],mat);
+  function setLine(l,pts){const p=l.geometry.attributes.position; pts.forEach((v,i)=>p.setXYZ(i,v.x,v.y,v.z)); p.needsUpdate=true; l.geometry.computeBoundingSphere(); if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  function triMesh(pts,color,op){
+    const g=new THREE.BufferGeometry().setFromPoints(pts); const idx=[]; for(let i=1;i<pts.length-1;i++) idx.push(0,i,i+1); g.setIndex(idx);
+    return new THREE.Mesh(g,new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false}));
+  }
+  function setMesh(m,pts){const p=m.geometry.attributes.position; pts.forEach((v,i)=>p.setXYZ(i,v.x,v.y,v.z)); p.needsUpdate=true; m.geometry.computeBoundingSphere();}
+  function tube(a,b,color,rad=0.035){
+    const dir=new THREE.Vector3().subVectors(b,a), l=dir.length();
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(rad,rad,l,10),new THREE.MeshBasicMaterial({color}));
+    m.position.copy(a).addScaledVector(dir,0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize()); return m;
+  }
+  const dot=(color,size=0.075)=>new THREE.Mesh(new THREE.SphereGeometry(size,16,12),new THREE.MeshBasicMaterial({color}));
+  function label(text,color,scale=0.5){
+    const c=document.createElement('canvas'); c.width=320; c.height=128;
+    const g=c.getContext('2d'); g.font='700 72px "PT Sans", Arial, sans-serif'; g.fillStyle=color; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,160,66);
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*2.5,scale,1); s.renderOrder=20; return s;
+  }
+  // дуга угла в вершине O между направлениями на P и Q (точки в координатах three)
+  function arc(O,P,Q,r,mat){
+    const a=new THREE.Vector3().subVectors(P,O).normalize(), b=new THREE.Vector3().subVectors(Q,O).normalize();
+    const ang=a.angleTo(b), n=new THREE.Vector3().crossVectors(a,b).normalize(), pts=[];
+    for(let i=0;i<=24;i++){ pts.push(a.clone().applyAxisAngle(n,ang*i/24).multiplyScalar(r).add(O)); }
+    return poly(pts,mat);
+  }
+  // значок прямого угла в вершине O
+  function rightMark(O,P,Q,r,mat){
+    const a=new THREE.Vector3().subVectors(P,O).normalize().multiplyScalar(r), b=new THREE.Vector3().subVectors(Q,O).normalize().multiplyScalar(r);
+    return poly([O.clone().add(a), O.clone().add(a).add(b), O.clone().add(b)], mat);
+  }
+
+  let INK, P1C, P2C;
+  const COL={seg:'#D2484F', tri:'#C08A1A', leg:'#8A5CC8', pt:'#5C7A99'};
+  const p2g=new THREE.Group(); scene.add(p2g);
+  const p1g=new THREE.Group(); scene.add(p1g);
+  // группа объектов: пространство / П₁ / П₂ / линии связи
+  const mkSet=()=>{const s={s:new THREE.Group(),p1:new THREE.Group(),p2:new THREE.Group(),k:new THREE.Group()}; scene.add(s.s); p1g.add(s.p1); p2g.add(s.p2); scene.add(s.k); return s;};
+  const setVis=(s,on,sp)=>{s.s.visible=on&&sp; s.p1.visible=s.p2.visible=s.k.visible=on;};
+  const linked=[];   // точки, у которых обновляются линии к П₁
+
+  function addPoint(st,p,c,n,n1,n2,o1,o2,size=0.08){
+    const o={p,w:W(p)};
+    const m=dot(c,size); m.position.copy(o.w); st.s.add(m);
+    if(n){const lb=label(n,c,0.45); lb.position.copy(o.w).add(new THREE.Vector3(0.28,0.25,0)); st.s.add(lb);}
+    if(n2){ o.w2=on2(p,0.025); const m2=dot(c,size*0.85); m2.position.copy(o.w2); st.p2.add(m2);
+      const lb2=label(n2,c,0.4); lb2.position.copy(o.w2).add(new THREE.Vector3(o2[0],o2[1],0)); st.p2.add(lb2);
+      st.s.add(seg(o.w,o.w2,lineMat(P2C,true,0.6))); }
+    if(n1){ o.m1=dot(c,size*0.85); o.m1.position.copy(on1(p,0.025)); st.p1.add(o.m1);
+      const lb1=label(n1,c,0.4); lb1.position.copy(on1(p,0.03)).add(new THREE.Vector3(o1[0],0,-o1[1])); st.p1.add(lb1);
+      o.L1=seg(o.w,o.w,lineMat(P1C,true,0.6)); st.s.add(o.L1); }
+    if(n1&&n2){ o.xa=new THREE.Vector3(p.x,0,0);
+      st.k.add(seg(o.w2,o.xa,lineMat(INK,false,0.4,true))); o.Lk1=seg(o.xa,o.xa,lineMat(INK,false,0.4,true)); st.k.add(o.Lk1); }
+    linked.push(o); return o;
+  }
+
+  let base, modeObjs={};
+  function build(){
+    INK=css('--ink'); P1C=css('--p1'); P2C=css('--p2');
+    // плоскости проекций
+    const p2=new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2,PLANE_V),new THREE.MeshBasicMaterial({color:P2C,transparent:true,opacity:0.08,side:THREE.DoubleSide,depthWrite:false}));
+    p2.position.set(0,PLANE_V/2,0); p2g.add(p2);
+    const e2=new THREE.LineSegments(new THREE.EdgesGeometry(p2.geometry),lineMat(P2C,false,0.6)); e2.position.copy(p2.position); p2g.add(e2);
+    const l2=label('Π₂',P2C,0.55); l2.position.set(-HALF_X+0.5,PLANE_V-0.35,0.02); p2g.add(l2);
+    const p1=new THREE.Mesh(new THREE.PlaneGeometry(HALF_X*2,PLANE_H),new THREE.MeshBasicMaterial({color:P1C,transparent:true,opacity:0.08,side:THREE.DoubleSide,depthWrite:false}));
+    p1.rotation.x=-Math.PI/2; p1.position.set(0,0,PLANE_H/2); p1g.add(p1);
+    const e1=new THREE.LineSegments(new THREE.EdgesGeometry(p1.geometry),lineMat(P1C,false,0.6)); e1.rotation.copy(p1.rotation); e1.position.copy(p1.position); p1g.add(e1);
+    const l1=label('Π₁',P1C,0.55); l1.position.set(-HALF_X+0.5,0.02,PLANE_H-0.35); p1g.add(l1);
+    scene.add(seg(new THREE.Vector3(-HALF_X,0,0),new THREE.Vector3(HALF_X,0,0),lineMat(INK,false,1,true)));
+    const lx=label('x₁₂',INK,0.42); lx.position.set(HALF_X+0.4,0,0); scene.add(lx);
+
+    // отрезок AB и его проекции
+    base=mkSet();
+    base.s.add(tube(W(A),W(B),COL.seg));
+    base.p2.add(seg(on2(A,0.012),on2(B,0.012),lineMat(COL.seg,false,1)));
+    base.p1.add(seg(on1(A,0.012),on1(B,0.012),lineMat(COL.seg,false,1)));
+    addPoint(base,A,COL.seg,'A','A₁','A₂',[-0.4,0.15],[-0.4,-0.15],0.09);
+    addPoint(base,B,COL.seg,'B','B₁','B₂',[0.4,-0.15],[0.4,0.15],0.09);
+
+    Object.entries(MODES).forEach(([k,m])=>{
+      const st2=mkSet(), st3=mkSet(), st4=mkSet();
+      const onP = m.plane==='p1' ? on1 : on2, host = m.plane==='p1' ? 'p1' : 'p2';
+      const H1=W(m.H1), H2=W(m.H2), Mw=W(m.M);
+      const pc = m.plane==='p1' ? P1C : P2C;
+
+      // шаг 2: треугольник H1–H2–M в пространстве + прямоугольник «катет = проекция»
+      st2.s.add(triMesh([H1,H2,Mw],COL.tri,0.32));
+      st2.s.add(seg(H1,H2,lineMat(pc,false,1)));                         // катет ∥ плоскости проекций
+      st2.s.add(seg(H2,Mw,lineMat(COL.leg,false,1)));                    // катет Δ
+      st2.s.add(rightMark(H2,H1,Mw,0.25,lineMat(INK,false,0.9,true)));
+      st2.s.add(arc(H1,H2,Mw,0.75,lineMat(COL.tri,false,1)));
+      const la=label(m.ang,COL.tri,0.45); la.position.copy(H1).lerp(new THREE.Vector3().addVectors(H2,Mw).multiplyScalar(0.5),0.32); st2.s.add(la);
+      const ld=label(m.leg,COL.leg,0.42); ld.position.copy(H2).lerp(Mw,0.5).add(new THREE.Vector3(-0.35,0,0)); st2.s.add(ld);
+      addPoint(st2,m.H2,pc,m.nH2,null,null,null,null,0.07);
+      // прямоугольник: катет H1H2 и его проекция — противоположные стороны
+      const pr = m.plane==='p1' ? (p=>V(p.x,p.y,0)) : (p=>V(p.x,0,p.z));
+      const rect=[H1,H2,W(pr(m.H2)),W(pr(m.H1))];
+      st2.s.add(triMesh(rect,pc,0.13));
+      st2.s.add(poly([...rect,rect[0]],lineMat(pc,true,0.8)));
+      const lr=label('= '+m.proj,pc,0.38); lr.position.copy(H1).lerp(H2,0.5).add(new THREE.Vector3(0,0.28,0)); st2.s.add(lr);
+      // размер Δ на другой проекции (как на доске)
+      if(k==='a'){ // Δz на П₂: горизонтали от A₂ и B₂ и размерная линия
+        const xr=B.x+0.7;
+        st2.p2.add(seg(on2(A,0.014),new THREE.Vector3(xr+0.2,A.z,0.014),lineMat(INK,false,0.6,true)));
+        st2.p2.add(seg(on2(B,0.014),new THREE.Vector3(xr+0.2,B.z,0.014),lineMat(INK,false,0.6,true)));
+        st2.p2.add(seg(new THREE.Vector3(xr,A.z,0.016),new THREE.Vector3(xr,B.z,0.016),lineMat(COL.leg,false,1)));
+        const t=label('Δz',COL.leg,0.4); t.position.set(xr+0.45,(A.z+B.z)/2,0.03); st2.p2.add(t);
+      } else {    // Δy на П₁
+        const xr=B.x+0.7;
+        st2.p1.add(seg(on1(A,0.014),new THREE.Vector3(xr+0.2,0.014,A.y),lineMat(INK,false,0.6,true)));
+        st2.p1.add(seg(on1(B,0.014),new THREE.Vector3(xr+0.2,0.014,B.y),lineMat(INK,false,0.6,true)));
+        st2.p1.add(seg(new THREE.Vector3(xr,0.016,A.y),new THREE.Vector3(xr,0.016,B.y),lineMat(COL.leg,false,1)));
+        const t=label('Δy',COL.leg,0.4); t.position.set(xr+0.45,0.03,(A.y+B.y)/2); st2.p1.add(t);
+      }
+
+      // шаг 3–4: поворачиваемая копия треугольника и её живая проекция
+      const mv={};
+      mv.mesh=triMesh([H1,H2,Mw],COL.tri,0.5); st3.s.add(mv.mesh);
+      mv.hyp=seg(H1,Mw,lineMat(COL.seg,false,1)); st3.s.add(mv.hyp);
+      mv.edges=poly([H1,H2,Mw],lineMat(COL.tri,false,1)); st3.s.add(mv.edges);
+      mv.dot=dot(COL.tri,0.09); st3.s.add(mv.dot);
+      mv.lab=label(m.star,COL.tri,0.45); st3.s.add(mv.lab);
+      mv.pm=triMesh([onP(m.H1,0.01),onP(m.H2,0.01),onP(m.M,0.01)],COL.tri,0.28); st3[host].add(mv.pm);
+      mv.pl=poly([onP(m.H1,0.012),onP(m.H2,0.012),onP(m.M,0.012),onP(m.H1,0.012)],lineMat(COL.tri,false,1)); st3[host].add(mv.pl);
+      // проецирующие лучи от вершин поворачиваемого треугольника
+      mv.ray=seg(Mw,Mw,lineMat(pc,true,0.7)); st3.s.add(mv.ray);
+
+      // эпюрный треугольник (как на доске): катет-проекция, перпендикуляр Δ, гипотенуза = н.в.
+      const F=m.final, fP=onP(F,0.018);
+      st4[host].add(seg(onP(m.H2,0.018),fP,lineMat(COL.leg,false,1)));
+      st4[host].add(seg(onP(m.H1,0.018),fP,lineMat(COL.seg,false,1)));
+      st4[host].add(rightMark(onP(m.H2,0.02),onP(m.H1,0.02),fP,0.22,lineMat(INK,false,0.9,true)));
+      st4[host].add(arc(onP(m.H1,0.02),onP(m.H2,0.02),fP,0.8,lineMat(COL.tri,false,1)));
+      const fd=dot(COL.tri,0.08); fd.position.copy(fP); st4[host].add(fd);
+      const fl=label(m.star,COL.tri,0.42); fl.position.copy(fP).add(m.plane==='p1'?new THREE.Vector3(-0.4,0.01,0.2):new THREE.Vector3(-0.2,0.3,0.01)); st4[host].add(fl);
+      const nv=label('н.в. AB',COL.seg,0.36); nv.position.copy(onP(m.H1,0.03)).lerp(fP,0.5).add(m.plane==='p1'?new THREE.Vector3(0,0.01,0.3):new THREE.Vector3(-0.45,0.05,0.01)); st4[host].add(nv);
+      const ga=label(m.ang,COL.tri,0.4); ga.position.copy(onP(m.H1,0.03)).lerp(onP(m.H2,0.03).clone().lerp(fP,0.5),0.38); st4[host].add(ga);
+
+      modeObjs[k]={st2,st3,st4,mv,m,onP};
+    });
+  }
+
+  // положение поворачиваемого треугольника по параметру анимации t ∈ [0,1]
+  const ease=x=>x<0?0:x>1?1:x*x*(3-2*x);
+  function updateMoving(o,t){
+    const m=o.m, th=ease(t/0.6)*Math.PI/2, k=ease((t-0.6)/0.4);
+    const T=mul(m.lift,k);
+    const P=[add(m.H1,T),add(m.H2,T),add(m.rot(th),T)];
+    const Pw=P.map(W);
+    setMesh(o.mv.mesh,Pw); setLine(o.mv.edges,Pw); setLine(o.mv.hyp,[Pw[0],Pw[2]]);
+    o.mv.dot.position.copy(Pw[2]); o.mv.lab.position.copy(Pw[2]).add(new THREE.Vector3(0.3,0.28,0));
+    const pp=P.map(p=>o.onP(p,0.01)), pl=P.map(p=>o.onP(p,0.012));
+    setMesh(o.mv.pm,pp); setLine(o.mv.pl,[...pl,pl[0]]);
+    // луч от поворачиваемой вершины к её проекции (в мировых координатах)
+    const host = m.plane==='p1' ? p1g : p2g;
+    const pw = o.onP(P[2],0.012).applyMatrix4(host.matrixWorld);
+    setLine(o.mv.ray,[Pw[2],pw]);
+    return th;
+  }
+
+  const TEXT={
+    a:{
+      1:'Отрезок AB общего положения и его проекции. Проекция A₁B₁ короче AB, потому что AB наклонён к П₁. Вопрос: как по A₁B₁ найти настоящую длину AB?',
+      2:'Проведём через B горизонталь до вертикали точки A — получим A₀. Фигура B A₀ A₁ B₁ — прямоугольник, поэтому катет BA₀ равен проекции A₁B₁ (они противоположные стороны). Второй катет A₀A — разность высот концов, то есть Δz, которую мы берём с П₂. Угол при B — это угол α между AB и П₁: катет BA₀ параллелен П₁.',
+      3:'Повернём треугольник вокруг катета BA₀ на 90°. Треугольник лёг в горизонтальную плоскость, параллельную П₁. Смотрите на П₁: его проекция «раскрывается» и становится равной самому треугольнику — фигура, параллельная плоскости проекций, проецируется в натуральную величину.',
+      4:'Опускаем треугольник на П₁ — он совпадает с треугольником на эпюре: катет A₁B₁, перпендикуляр A₁A* = Δz, гипотенуза B₁A* = |AB|. Именно поэтому на доске Δz откладывают перпендикулярно проекции — это просто тот же треугольник, положенный на чертёж.',
+    },
+    b:{
+      1:'Тот же отрезок AB. Его фронтальная проекция A₂B₂ тоже короче AB, потому что AB наклонён к П₂.',
+      2:'Проведём через A прямую, параллельную П₂, до проецирующего луча точки B — получим B₀. Фигура A B₀ B₂ A₂ — прямоугольник, катет AB₀ = A₂B₂. Второй катет B₀B — разность глубин, Δy, её берём с П₁. Угол при A — угол β между AB и П₂.',
+      3:'Поворачиваем треугольник вокруг катета AB₀, пока он не станет параллелен П₂. Проекция на П₂ раскрывается до натуральной величины.',
+      4:'Переносим треугольник на П₂ — получаем построение с доски: перпендикуляр B₂B* = Δy, гипотенуза A₂B* = |AB|, угол при A₂ = β. Длина AB та же, что в способе с α, а угол другой.',
+    },
+  };
+  function calcHTML(k){
+    const m=MODES[k], a=Math.atan(m.d/m.projLen)/deg;
+    return `|${m.proj}| = ${m.projLen.toFixed(2)}, &nbsp;${m.leg} = ${m.d.toFixed(2)}<br>`+
+      `|AB| = √(${m.projLen.toFixed(2)}² + ${m.d.toFixed(2)}²) = <b>${Math.sqrt(m.projLen**2+m.d**2).toFixed(2)}</b> &nbsp;(проверка в 3D: ${LAB.toFixed(2)})<br>`+
+      `${m.ang} = arctg(${m.leg} / |${m.proj}|) = <b>${a.toFixed(1)}°</b>`;
+  }
+
+  // ---------- камера и интерфейс ----------
+  const VIEWS={
+    iso:{th:0.72,ph:1.12,r:15,t:[0,2.0,2.4],fold:0},
+    front:{th:0,ph:Math.PI/2,r:13.5,t:[0,2.6,0],fold:0},
+    top:{th:0,ph:0.001,r:13.5,t:[0,0,2.6],fold:0},
+    epure:{th:0,ph:Math.PI/2,r:18.5,t:[0,-0.2,0],fold:90},
+  };
+  const cur={...VIEWS.iso,t:[...VIEWS.iso.t]}, tgt={...VIEWS.iso,t:[...VIEWS.iso.t]};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); if(cur.ph<0.01) camera.up.set(0,0,-1); camera.lookAt(cur.t[0],cur.t[1],cur.t[2]);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI-0.05,Math.max(0.001,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(40,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(40,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  const foldIn=document.getElementById('fold'), foldVal=document.getElementById('foldVal');
+  foldIn.addEventListener('input',()=>{tgt.fold=+foldIn.value;foldVal.textContent=foldIn.value+'°';});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>{const v=VIEWS[b.dataset.view]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t];tgt.fold=v.fold;
+    while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; foldIn.value=v.fold;foldVal.textContent=v.fold+'°';markView(b.dataset.view);}));
+  function resize(){const st=document.getElementById('stage');renderer.setSize(st.clientWidth,st.clientHeight,false);camera.aspect=st.clientWidth/st.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    build();
+    let mode='a', step=1, anim=0, animTgt=0;
+    const animIn=document.getElementById('anim'), animVal=document.getElementById('animVal'), tSpace=document.getElementById('tSpace');
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const apply=()=>{
+      const sp=tSpace.checked;
+      setVis(base,true,sp);
+      for(const k in modeObjs){ const o=modeObjs[k], on=k===mode;
+        setVis(o.st2,on&&step>=2,sp); setVis(o.st3,on&&step>=3,sp); setVis(o.st4,on&&step>=4,sp); }
+      document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.step===step)));
+      document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+      document.getElementById('stepText').textContent=TEXT[mode][step];
+      document.getElementById('calc').innerHTML=calcHTML(mode);
+    };
+    document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{
+      step=+b.dataset.step; animTgt = step<=2 ? 0 : step===3 ? 0.6 : 1; if(reduce) anim=animTgt; apply();}));
+    document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode; anim=0; apply();}));
+    animIn.addEventListener('input',()=>{ anim=animTgt=+animIn.value/100; step = anim<=0 ? Math.min(step,2) : anim<0.6 ? 3 : (anim<1?3:4); if(anim>0&&step<3) step=3; apply(); });
+    tSpace.addEventListener('change',apply); apply();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+
+    const tmp=new THREE.Vector3();
+    (function frame(){
+      const k=reduce?1:0.12;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k; cur.fold+=(tgt.fold-cur.fold)*k;
+      // анимация треугольника идёт с постоянной скоростью
+      if(Math.abs(animTgt-anim)>1e-4){ anim += Math.sign(animTgt-anim)*Math.min(Math.abs(animTgt-anim),0.008); animIn.value=Math.round(anim*100); animVal.textContent=Math.round(anim*100)+'%'; }
+      M_fold();
+      updateMoving(modeObjs[mode],anim);
+      const fade=Math.max(0,1-cur.fold/60);
+      linked.forEach(o=>{ if(!o.m1) return; o.m1.getWorldPosition(tmp); setLine(o.L1,[o.w,tmp]); o.L1.material.opacity=0.6*fade; if(o.Lk1) setLine(o.Lk1,[o.xa,tmp]); });
+      placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    function M_fold(){ p1g.rotation.x=cur.fold*deg; p1g.updateMatrixWorld(true); p2g.updateMatrixWorld(true); }
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>
