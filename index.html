@@ -10,16 +10,16 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:ital,wght@1,500;1,700&family=PT+Sans:wght@400;700&family=PT+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=PT+Mono&display=swap" rel="stylesheet">
 <style>
 /* Лист чертежа на миллиметровке: штамп с двойной рамкой, папки лекций с крупным номером листа, темы карточками.
-   Заголовки — наклонный узкий шрифт, как чертёжный шрифт тип Б (ГОСТ 2.304). */
+   Текст — антиквой, как в ответах Claude; подписи и номера — моноширинным. */
 :root{
   --paper:#E8EDF1; --sheet:#F8FAFB; --ink:#1B2836; --muted:#566576; --rule:#C5CFD9;
   --grid:rgba(59,123,196,.07); --grid2:rgba(59,123,196,.14);
   --p2:#3B7BC4; --p1:#3E9A64; --red:#C8424A; --hi:#FCE9A8;
-  --f-display:"Fira Sans Extra Condensed","PT Sans Narrow","Arial Narrow",Arial,sans-serif;
-  --f-body:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
   --f-mono:"PT Mono",ui-monospace,Consolas,monospace;
   color-scheme:light;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
@@ -31,20 +31,19 @@
 *{box-sizing:border-box}
 html{scroll-padding-top:150px}
 /* миллиметровка: мелкая клетка 10px, крупная 50px */
-body{margin:0;color:var(--ink);font:16px/1.45 var(--f-body);background-color:var(--paper);
+body{margin:0;color:var(--ink);font:17px/1.55 var(--f-body);background-color:var(--paper);
   background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),
     linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
   background-size:50px 50px,50px 50px,10px 10px,10px 10px;background-position:-1px -1px}
 .wrap{max-width:1080px;margin:0 auto;padding-block:24px 40px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   display:flex;flex-direction:column;gap:22px}
-.disp{font-family:var(--f-display);font-style:italic;font-weight:700;letter-spacing:.01em}
 
 /* штамп: толстая рамка + тонкая внешняя, как рамка листа */
 .stamp{border:2px solid var(--ink);outline:1px solid var(--ink);outline-offset:4px;margin:5px;background:var(--sheet);display:grid;grid-template-columns:1fr auto}
 .stamp .name{padding:14px 18px 12px;border-right:2px solid var(--ink);min-width:0;display:flex;flex-direction:column;gap:6px}
 .stamp .code{font:12px/1 var(--f-mono);color:var(--muted);letter-spacing:.08em}
-.stamp h1{font:italic 700 clamp(1.7rem,4.4vw,2.6rem)/1.02 var(--f-display);margin:0;text-wrap:balance}
+.stamp h1{font:600 clamp(1.7rem,4.4vw,2.5rem)/1.1 var(--f-display);margin:0;text-wrap:balance}
 .stamp h1 a{color:inherit;text-decoration:none}
 .stamp .name p{margin:0;color:var(--muted);font-size:.95rem;max-width:62ch}
 .stamp .meta{display:grid;grid-template-columns:auto auto;font:13px/1.2 var(--f-mono)}
@@ -52,7 +51,7 @@ body{margin:0;color:var(--ink);font:16px/1.45 var(--f-body);background-color:var
 .stamp .meta div:nth-child(odd){border-right:1px solid var(--ink)}
 .stamp .meta div:nth-last-child(-n+2){border-bottom:0}
 .stamp .meta span{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.stamp .meta b{font:italic 700 22px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stamp .meta b{font:600 22px/1 var(--f-display);font-variant-numeric:tabular-nums}
 @media (max-width:560px){ .stamp{grid-template-columns:1fr} .stamp .name{border-right:0;border-bottom:2px solid var(--ink)} .stamp .meta{grid-template-columns:repeat(4,1fr)} .stamp .meta div{border-bottom:0;border-right:1px solid var(--ink)} .stamp .meta div:last-child{border-right:0} }
 
 /* поиск */
@@ -77,7 +76,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--p2);outline-offset:
 /* разделы */
 main{display:flex;flex-direction:column;gap:28px}
 section{display:flex;flex-direction:column;gap:12px}
-section h2{font:italic 700 1.5rem/1.1 var(--f-display);margin:0;display:flex;align-items:baseline;gap:10px;letter-spacing:.01em}
+section h2{font:600 1.45rem/1.15 var(--f-display);margin:0;display:flex;align-items:baseline;gap:10px}
 section h2::after{content:"";flex:1;border-bottom:2px solid var(--ink);transform:translateY(-5px)}
 section h2 small{font:13px var(--f-mono);font-style:normal;color:var(--muted);letter-spacing:0}
 section h2 a{color:inherit;text-decoration:none}
@@ -91,9 +90,9 @@ section h2 a:hover{color:var(--p2)}
   border:1px solid var(--rule);border-top:3px solid var(--ink);border-radius:2px;transition:border-color .2s, transform .2s, box-shadow .2s}
 .folder .num{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 4px;border-right:1px solid var(--rule)}
 .folder .num small{font:12px/1 var(--f-mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
-.folder .num b{font:italic 700 3.2rem/1 var(--f-display);color:var(--p2);margin-top:4px}
+.folder .num b{font:600 3rem/1 var(--f-display);color:var(--p2);margin-top:4px}
 .folder .body{min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
-.folder h3{font:italic 700 1.4rem/1.05 var(--f-display);margin:0;text-wrap:balance}
+.folder h3{font:600 1.3rem/1.15 var(--f-display);margin:0;text-wrap:balance}
 .folder ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:.9rem;color:var(--muted)}
 .folder li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .folder li i{font:12px var(--f-mono);font-style:normal;color:var(--p2);margin-right:6px}
@@ -107,8 +106,8 @@ section h2 a:hover{color:var(--p2)}
 .card .ico{width:80px;height:80px;border:1px solid var(--rule);border-radius:2px;color:var(--ink);background-color:var(--paper);
   background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);background-size:10px 10px}
 .card .body{min-width:0;display:flex;flex-direction:column;gap:4px}
-.card .where{font:italic 700 1.05rem/1 var(--f-display);color:var(--p2)}
-.card h3{font:700 1.05rem/1.2 var(--f-body);margin:0;text-wrap:balance}
+.card .where{font:600 1rem/1 var(--f-display);color:var(--p2)}
+.card h3{font:600 1.08rem/1.25 var(--f-body);margin:0;text-wrap:balance}
 .card p{margin:0;font-size:.9rem;color:var(--muted)}
 .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:6px}
 .tags span{font:12px/1.4 var(--f-mono);color:var(--muted);border:1px solid var(--rule);border-radius:2px;padding:0 5px;background:var(--paper)}
