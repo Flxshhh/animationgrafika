@@ -29,6 +29,7 @@
 }
 :root[data-theme="dark"]{ --paper:#121A22; --sheet:#1A2430; --ink:#DCE4EC; --muted:#93A1B0; --rule:#324152; --grid:rgba(106,163,227,.05); --grid2:rgba(106,163,227,.10); --p2:#6AA3E3; --p1:#62BF88; --red:#E86A70; --hi:#5A4A1A; color-scheme:dark; }
 *{box-sizing:border-box}
+html{scroll-padding-top:150px}
 /* миллиметровка: мелкая клетка 10px, крупная 50px */
 body{margin:0;color:var(--ink);font:16px/1.45 var(--f-body);background-color:var(--paper);
   background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),
@@ -50,7 +51,7 @@ body{margin:0;color:var(--ink);font:16px/1.45 var(--f-body);background-color:var
 .stamp .meta div{padding:8px 14px;display:flex;flex-direction:column;justify-content:center;gap:3px;border-bottom:1px solid var(--ink)}
 .stamp .meta div:nth-child(odd){border-right:1px solid var(--ink)}
 .stamp .meta div:nth-last-child(-n+2){border-bottom:0}
-.stamp .meta span{color:var(--muted);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.stamp .meta span{color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .stamp .meta b{font:italic 700 22px/1 var(--f-display);font-variant-numeric:tabular-nums}
 @media (max-width:560px){ .stamp{grid-template-columns:1fr} .stamp .name{border-right:0;border-bottom:2px solid var(--ink)} .stamp .meta{grid-template-columns:repeat(4,1fr)} .stamp .meta div{border-bottom:0;border-right:1px solid var(--ink)} .stamp .meta div:last-child{border-right:0} }
 
@@ -58,13 +59,16 @@ body{margin:0;color:var(--ink);font:16px/1.45 var(--f-body);background-color:var
 .tools{display:flex;flex-direction:column;gap:10px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px;
   box-shadow:0 1px 0 var(--rule)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.search-label{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:.9rem;font-weight:700}
+.search-label output{font:12px var(--f-mono);font-weight:400;color:var(--muted)}
 .search{position:relative}
 .search input{width:100%;font:inherit;font-size:1.05rem;color:var(--ink);background:var(--sheet);border:1px solid var(--rule);border-bottom:2px solid var(--ink);border-radius:2px;padding:11px 44px 11px 40px}
 .search input:focus{outline:none;border-color:var(--p2);border-bottom-color:var(--p2);box-shadow:0 0 0 3px color-mix(in srgb,var(--p2) 22%,transparent)}
 .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:12px var(--f-mono);color:var(--muted);border:1px solid var(--rule);border-radius:2px;padding:2px 6px}
-.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.95rem;min-height:1.6em}
-.crumbs a{color:var(--p2);text-decoration:none}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.95rem;min-height:44px}
+.crumbs a{color:var(--p2);text-decoration:none;display:inline-flex;align-items:center;min-height:44px;padding-inline:2px}
+.crumbs .here,.crumbs .sep{display:inline-flex;align-items:center;min-height:44px}
 .crumbs a:hover{text-decoration:underline}
 .crumbs .sep{color:var(--muted)}
 .crumbs .here{font-weight:700}
@@ -84,9 +88,9 @@ section h2 a:hover{color:var(--p2)}
 
 /* папка лекции: крупный наклонный номер слева, как номер листа в штампе */
 .folder{display:grid;grid-template-columns:72px 1fr;color:inherit;text-decoration:none;background:var(--sheet);
-  border:1px solid var(--rule);border-top:3px solid var(--ink);border-radius:2px;transition:border-color .15s, transform .15s, box-shadow .15s}
+  border:1px solid var(--rule);border-top:3px solid var(--ink);border-radius:2px;transition:border-color .2s, transform .2s, box-shadow .2s}
 .folder .num{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 4px;border-right:1px solid var(--rule)}
-.folder .num small{font:10px/1 var(--f-mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.folder .num small{font:12px/1 var(--f-mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
 .folder .num b{font:italic 700 3.2rem/1 var(--f-display);color:var(--p2);margin-top:4px}
 .folder .body{min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .folder h3{font:italic 700 1.4rem/1.05 var(--f-display);margin:0;text-wrap:balance}
@@ -98,7 +102,7 @@ section h2 a:hover{color:var(--p2)}
 @media (prefers-reduced-motion:no-preference){ .folder:hover,.card:hover{transform:translateY(-2px)} }
 
 /* карточка темы */
-.card{display:grid;grid-template-columns:80px 1fr;gap:14px;background:var(--sheet);border:1px solid var(--rule);border-radius:2px;padding:12px;color:inherit;text-decoration:none;transition:border-color .15s, transform .15s, box-shadow .15s}
+.card{display:grid;grid-template-columns:80px 1fr;gap:14px;background:var(--sheet);border:1px solid var(--rule);border-radius:2px;padding:12px;color:inherit;text-decoration:none;transition:border-color .2s, transform .2s, box-shadow .2s}
 .card:hover{border-color:var(--p2);box-shadow:0 6px 18px -12px color-mix(in srgb,var(--ink) 60%,transparent)}
 .card .ico{width:80px;height:80px;border:1px solid var(--rule);border-radius:2px;color:var(--ink);background-color:var(--paper);
   background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);background-size:10px 10px}
@@ -111,6 +115,9 @@ section h2 a:hover{color:var(--p2)}
 mark{background:var(--hi);color:inherit;border-radius:2px}
 
 .empty{background:var(--sheet);border:1px dashed var(--rule);border-radius:2px;padding:20px;color:var(--muted);text-align:center}
+.empty .sugg{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:10px}
+.empty .sugg button{font:13px var(--f-mono);color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:2px;padding:0 12px;min-height:36px;cursor:pointer;text-decoration:none}
+.empty .sugg button:hover{border-color:var(--p2)}
 .empty button{font:inherit;color:var(--p2);background:none;border:0;cursor:pointer;text-decoration:underline}
 footer{color:var(--muted);font-size:.85rem;border-top:2px solid var(--ink);padding-top:12px;display:flex;flex-direction:column;gap:4px}
 footer a{color:var(--p2)}
@@ -133,11 +140,12 @@ footer a{color:var(--p2)}
   </header>
 
   <div class="tools">
-    <label class="search" for="q">
+    <div class="search-label"><label for="q">Поиск по всем лекциям</label><output id="qCount" aria-live="polite"></output></div>
+    <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-      <input id="q" type="search" placeholder="Поиск по всем лекциям: конус, видимость, натуральная величина, П₃…" autocomplete="off" aria-label="Поиск по темам">
-      <kbd>/</kbd>
-    </label>
+      <input id="q" type="search" placeholder="Например: конус, видимость, натуральная величина, П₃" autocomplete="off">
+      <kbd aria-hidden="true">/</kbd>
+    </div>
     <nav class="crumbs" id="crumbs" aria-label="Навигация"></nav>
   </div>
 
@@ -256,6 +264,7 @@ function hl(text, words){
 }
 const plural = (n,a,b,c) => { const m10=n%10, m100=n%100; return n+' '+(m10===1&&m100!==11?a:m10>=2&&m10<=4&&(m100<10||m100>=20)?b:c); };
 
+const qCount = document.getElementById('qCount');
 const qEl = document.getElementById('q'), list = document.getElementById('list'), crumbs = document.getElementById('crumbs');
 const currentLecture = () => LECTURES.find(L => '#'+L.id === location.hash) || null;
 
@@ -275,13 +284,19 @@ function render(){
   const raw = qEl.value.trim(), words = norm(raw).split(' ').filter(Boolean);
   const hw = raw.toLowerCase().split(/\s+/).filter(Boolean);
   const L = currentLecture();
+  if(!words.length) qCount.textContent = '';
 
   // режим поиска — по всем лекциям, результаты сгруппированы по лекциям
   if(words.length){
     crumbs.innerHTML = `<a href="#">Все лекции</a><span class="sep">/</span><span class="here">Поиск</span>`;
     const found = ALL.filter(it => words.every(w => it.hay.includes(w)));
+    qCount.textContent = found.length ? `найдено: ${plural(found.length,'тема','темы','тем')}` : 'ничего не найдено';
     if(!found.length){
-      list.innerHTML = `<div class="empty">Ничего не нашлось по запросу «${esc(raw)}». <button id="reset" type="button">Сбросить поиск</button></div>`;
+      const sugg=['видимость','натуральная величина','П₃','конус','эпюр'];
+      list.innerHTML = `<div class="empty">Ничего не нашлось по запросу «${esc(raw)}». Попробуйте другое слово:
+        <div class="sugg">${sugg.map(w=>`<button type="button" data-q="${esc(w)}">${esc(w)}</button>`).join('')}</div>
+        <p style="margin:10px 0 0"><button id="reset" type="button">Сбросить поиск</button></p></div>`;
+      list.querySelectorAll('[data-q]').forEach(bt=>bt.onclick=()=>{ qEl.value=bt.dataset.q; render(); qEl.focus(); });
       document.getElementById('reset').onclick = ()=>{ qEl.value=''; render(); qEl.focus(); };
       return;
     }
