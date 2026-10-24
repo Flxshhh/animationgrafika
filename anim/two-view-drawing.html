@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Flxshhh">
+<meta name="copyright" content="© 2026 Flxshhh. Все права защищены.">
+<!-- © 2026 Flxshhh (github.com/Flxshhh). Все права защищены. Копирование без разрешения автора запрещено. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Двухкартинный комплексный чертёж точки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64; --accent:#D2484F;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --accent:#E86A70; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --accent:#E86A70; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:50vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.steps button{border-style:dashed}
+.steps button[aria-pressed="true"]{border-style:solid}
+.slider{display:flex;align-items:center;gap:10px;width:100%}
+.slider label{font-size:.92rem;white-space:nowrap;min-width:10.5em}
+.slider input{flex:1}
+#yIn{accent-color:var(--p1)} #zIn{accent-color:var(--p2)} #fold{accent-color:var(--p1)}
+#text{font-size:.92rem;line-height:1.5;max-width:72ch;margin:0 0 10px;border-left:3px solid var(--accent);padding-left:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" onclick="try{if(document.referrer&&new URL(document.referrer).pathname.replace(/index\.html$/,'')===new URL('../',location.href).pathname){history.back();return false}}catch(e){}" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Двухкартинный комплексный чертёж</h1>
+  <p>Как из точки в пространстве получается эпюр Монжа</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row steps" id="steps">
+    <button data-step="1" aria-pressed="true">1. П₁, П₂, x₁₂</button>
+    <button data-step="2" aria-pressed="false">2. Проецируем A</button>
+    <button data-step="3" aria-pressed="false">3. Поворот П₁</button>
+    <button data-step="4" aria-pressed="false">4. Эпюр</button>
+  </div>
+  <p id="text"></p>
+  <div id="calc"></div>
+  <div class="row slider">
+    <label for="yIn">y (глубина): <span id="yV"></span></label>
+    <input id="yIn" type="range" min="-25" max="45" value="25">
+  </div>
+  <div class="row slider">
+    <label for="zIn">z (высота): <span id="zV"></span></label>
+    <input id="zIn" type="range" min="-25" max="45" value="32">
+  </div>
+  <div class="row slider">
+    <label for="fold">Поворот П₁: <span id="foldV">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Вид на П₂</button>
+    <button data-view="side" aria-pressed="false">Сбоку</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // Монж: x — вдоль оси x₁₂, y — к наблюдателю, z — вверх. three.js: X = x, Y = z, Z = y
+  const deg=Math.PI/180, X0=0.6;
+  const HX=3.4, PZ0=-3, PZ1=5, PY0=-3, PY1=5;      // плоскости продолжены и за ось — для других четвертей
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+
+  const inkMats=[];
+  const lm=(color,dashed,op=1,ink=false)=>{const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.13,gapSize:0.09,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op}); if(ink) inkMats.push(m); return m;};
+  function dline(n,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new Array(n).fill(0).map(()=>new THREE.Vector3())),mat); l.frustumCulled=false; return l;}
+  function setLine(l,pts){const p=l.geometry.attributes.position; for(let i=0;i<p.count;i++){const v=pts[Math.min(i,pts.length-1)]; p.setXYZ(i,v.x,v.y,v.z);} p.needsUpdate=true; if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  const seg=(a,b,m)=>{const l=dline(2,m); setLine(l,[a,b]); return l;};
+  const dot=(c,s=0.08)=>new THREE.Mesh(new THREE.SphereGeometry(s,16,12),new THREE.MeshBasicMaterial({color:c}));
+  function label(text,color,scale=0.5){
+    const c=document.createElement('canvas'); c.width=320; c.height=128; const g=c.getContext('2d');
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*2.5,scale,1); s.renderOrder=20;
+    let last=''; s.setText=(t,col)=>{const k=t+col; if(k===last) return; last=k; g.clearRect(0,0,320,128); g.font='700 72px "PT Sans", Arial, sans-serif'; g.fillStyle=col; g.textAlign='center'; g.textBaseline='middle'; g.fillText(t,160,66); tex.needsUpdate=true;};
+    s.setText(text,color); return s;
+  }
+  function arrow(color){return new THREE.Mesh(new THREE.ConeGeometry(0.07,0.25,12),new THREE.MeshBasicMaterial({color}));}
+  function setArrow(m,from,to,at=0.55){const d=new THREE.Vector3().subVectors(to,from); m.position.copy(from).addScaledVector(d,at); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());}
+  function rmPts(O,P,Q,r){const a=new THREE.Vector3().subVectors(P,O).normalize().multiplyScalar(r), b=new THREE.Vector3().subVectors(Q,O).normalize().multiplyScalar(r); return [O.clone().add(a),O.clone().add(a).add(b),O.clone().add(b)];}
+
+  let INK,P1C,P2C; const AC='#D2484F';
+  const p2g=new THREE.Group(), p1g=new THREE.Group(); scene.add(p2g); scene.add(p1g);
+  const D={};
+  function build(){
+    INK=css('--ink'); P1C=css('--p1'); P2C=css('--p2');
+    // П₂: верхняя половина ярче (I и II четверти), нижняя — бледнее
+    const pl=(w,h,c,op)=>new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false}));
+    const a2=pl(HX*2,PZ1,P2C,0.12); a2.position.set(0,PZ1/2,0); p2g.add(a2);
+    const b2=pl(HX*2,-PZ0,P2C,0.05); b2.position.set(0,PZ0/2,0); p2g.add(b2);
+    p2g.add(seg(new THREE.Vector3(-HX,PZ0,0),new THREE.Vector3(-HX,PZ1,0),lm(P2C,false,0.6)));
+    p2g.add(seg(new THREE.Vector3(HX,PZ0,0),new THREE.Vector3(HX,PZ1,0),lm(P2C,false,0.6)));
+    p2g.add(seg(new THREE.Vector3(-HX,PZ1,0),new THREE.Vector3(HX,PZ1,0),lm(P2C,false,0.6)));
+    p2g.add(seg(new THREE.Vector3(-HX,PZ0,0),new THREE.Vector3(HX,PZ0,0),lm(P2C,true,0.4)));
+    const l2=label('Π₂',P2C,0.55); l2.position.set(-HX+0.5,PZ1-0.35,0.02); p2g.add(l2);
+    // П₁: передняя половина ярче
+    const a1=pl(HX*2,PY1,P1C,0.12); a1.rotation.x=-Math.PI/2; a1.position.set(0,0,PY1/2); p1g.add(a1);
+    const b1=pl(HX*2,-PY0,P1C,0.05); b1.rotation.x=-Math.PI/2; b1.position.set(0,0,PY0/2); p1g.add(b1);
+    p1g.add(seg(new THREE.Vector3(-HX,0,PY0),new THREE.Vector3(-HX,0,PY1),lm(P1C,false,0.6)));
+    p1g.add(seg(new THREE.Vector3(HX,0,PY0),new THREE.Vector3(HX,0,PY1),lm(P1C,false,0.6)));
+    p1g.add(seg(new THREE.Vector3(-HX,0,PY1),new THREE.Vector3(HX,0,PY1),lm(P1C,false,0.6)));
+    p1g.add(seg(new THREE.Vector3(-HX,0,PY0),new THREE.Vector3(HX,0,PY0),lm(P1C,true,0.4)));
+    const l1=label('Π₁',P1C,0.55); l1.position.set(-HX+0.5,0.02,PY1-0.35); p1g.add(l1);
+    // ось x₁₂
+    scene.add(seg(new THREE.Vector3(-HX-0.3,0,0),new THREE.Vector3(HX+0.3,0,0),lm(INK,false,1,true)));
+    const lx=label('x₁₂',INK,0.45); lx.position.set(-HX-0.6,-0.2,0); scene.add(lx);
+    // дуга поворота П₁
+    D.arc=dline(25,lm(P1C,true,0.8)); scene.add(D.arc); D.arcA=arrow(P1C); scene.add(D.arcA);
+
+    // точка и проекции
+    D.A=dot(AC,0.1); scene.add(D.A); D.Al=label('A',AC,0.5); scene.add(D.Al);
+    D.A2=dot(AC,0.08); p2g.add(D.A2); D.A2l=label('A₂',AC,0.42); p2g.add(D.A2l);
+    D.A1=dot(AC,0.08); p1g.add(D.A1); D.A1l=label('A₁',AC,0.42); p1g.add(D.A1l);
+    D.Ax=dot(INK,0.06); scene.add(D.Ax); D.Axl=label('Aₓ',INK,0.36); scene.add(D.Axl);
+    D.pr2=dline(2,lm(P2C,false,0.9)); scene.add(D.pr2); D.ar2=arrow(P2C); scene.add(D.ar2);
+    D.pr1=dline(2,lm(P1C,false,0.9)); scene.add(D.pr1); D.ar1=arrow(P1C); scene.add(D.ar1);
+    D.k2=dline(2,lm(INK,false,0.8,true)); scene.add(D.k2);    // A₂–Aₓ
+    D.k1=dline(2,lm(INK,false,0.8,true)); scene.add(D.k1);    // Aₓ–A₁ (поворачивается с П₁)
+    D.rm2=dline(3,lm(INK,false,0.9,true)); scene.add(D.rm2);
+    D.rm1=dline(3,lm(INK,false,0.9,true)); scene.add(D.rm1);
+    D.rmA2=dline(3,lm(INK,false,0.9,true)); scene.add(D.rmA2);
+    D.rmA1=dline(3,lm(INK,false,0.9,true)); scene.add(D.rmA1);
+    // прямоугольник A–A₂–Aₓ–A₁: плоскость ⟂ x₁₂
+    const g=new THREE.BufferGeometry().setFromPoints([0,0,0,0].map(()=>new THREE.Vector3())); g.setIndex([0,1,2,0,2,3]);
+    D.rect=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:AC,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false})); D.rect.frustumCulled=false; scene.add(D.rect);
+    // размеры y и z
+    D.zl=label('z',P2C,0.4); scene.add(D.zl); D.yl=label('y',P1C,0.4); scene.add(D.yl);
+  }
+
+  const st={step:1, y:2.5, z:3.2};
+  const cur={th:0.75,ph:1.15,r:16,t:[0,1.6,1.5],fold:0}, tgt={...cur,t:[...cur.t]};
+  const tmp=new THREE.Vector3();
+
+  function update(){
+    const y=st.y, z=st.z, show=st.step>=2;
+    p1g.rotation.x=cur.fold*deg; p1g.updateMatrixWorld(true);
+    const A=new THREE.Vector3(X0,z,y), A2=new THREE.Vector3(X0,z,0.02), Ax=new THREE.Vector3(X0,0,0);
+    D.A1.position.set(X0,0.02,y); D.A1l.position.set(X0+0.42,0.03,y+(y>=0?0.25:-0.25));
+    D.A2.position.copy(A2); D.A2l.position.set(X0+0.42,z+(z>=0?0.2:-0.2),0.03);
+    const A1w=D.A1.getWorldPosition(new THREE.Vector3());
+    const space = cur.fold<1;   // проецирующие лучи имеют смысл, пока П₁ не повёрнута
+    [D.A,D.Al,D.pr2,D.ar2,D.pr1,D.ar1,D.rect,D.rmA2,D.rmA1].forEach(o=>o.visible=show);
+    [D.A2,D.A2l,D.A1,D.A1l,D.Ax,D.Axl,D.k1,D.k2,D.rm2,D.rm1,D.zl,D.yl].forEach(o=>o.visible=show);
+    const fade=Math.max(0,1-cur.fold/50);
+    [D.A,D.Al,D.pr2,D.ar2,D.pr1,D.ar1,D.rect,D.rmA2,D.rmA1].forEach(o=>{ if(o.material) {o.material.transparent=true; o.material.opacity=(o===D.rect?0.12:1)*fade;} });
+    D.A.position.copy(A); D.Al.position.copy(A).add(new THREE.Vector3(0.3,0.3,0));
+    setLine(D.pr2,[A,A2]); setArrow(D.ar2,A,A2);
+    setLine(D.pr1,[A,A1w]); setArrow(D.ar1,A,A1w);
+    D.Ax.position.copy(Ax); D.Axl.position.set(X0-0.38,-0.28,0.05);
+    setLine(D.k2,[A2,Ax]); setLine(D.k1,[Ax,A1w]);
+    // прямые углы: у Aₓ (между линиями связи и осью), у A₂ и A₁ (проецирующие лучи ⟂ плоскостям)
+    const xdir=new THREE.Vector3(X0+1,0,0);
+    if(Math.abs(z)>0.2) setLine(D.rm2,rmPts(Ax,A2,xdir,0.22)); else D.rm2.visible=false;
+    if(Math.abs(y)>0.2) setLine(D.rm1,rmPts(Ax,A1w,new THREE.Vector3(X0-1,0,0),0.22)); else D.rm1.visible=false;
+    if(Math.abs(y)>0.3&&Math.abs(z)>0.3){ setLine(D.rmA2,rmPts(A2,A,Ax,0.2)); setLine(D.rmA1,rmPts(A1w,A,Ax,0.2)); } else { D.rmA2.visible=D.rmA1.visible=false; }
+    const rp=D.rect.geometry.attributes.position; [A,A2,Ax,A1w].forEach((v,i)=>rp.setXYZ(i,v.x,v.y,v.z)); rp.needsUpdate=true; D.rect.geometry.computeBoundingSphere();
+    D.zl.position.set(X0-0.35,z/2,0.05);
+    D.yl.position.copy(Ax).lerp(A1w,0.5).add(new THREE.Vector3(-0.35,0,0));
+    // дуга поворота: путь точки A₁ при совмещении П₁ с П₂
+    const R=Math.abs(y), pts=[];
+    for(let i=0;i<=24;i++){const a=cur.fold*deg+(90-cur.fold)*deg*i/24; pts.push(new THREE.Vector3(X0,-Math.sin(a)*y,Math.cos(a)*y));}
+    setLine(D.arc,pts); D.arc.visible=D.arcA.visible= st.step===3 && cur.fold<89 && R>0.3;
+    setArrow(D.arcA,pts[0],pts[3],0);
+  }
+
+  function quarter(){
+    const y=st.y, z=st.z;
+    if(Math.abs(y)<0.05&&Math.abs(z)<0.05) return 'точка на оси x₁₂';
+    if(Math.abs(z)<0.05) return 'точка лежит в П₁ (A₂ на оси)';
+    if(Math.abs(y)<0.05) return 'точка лежит в П₂ (A₁ на оси)';
+    if(y>0&&z>0) return 'I четверть: A₂ над осью, A₁ под осью';
+    if(y<0&&z>0) return 'II четверть: A₁ и A₂ обе над осью';
+    if(y<0&&z<0) return 'III четверть: A₁ над осью, A₂ под осью';
+    return 'IV четверть: A₁ и A₂ обе под осью';
+  }
+  const TEXT={
+    1:'Две взаимно перпендикулярные плоскости проекций: П₁ — горизонтальная, П₂ — фронтальная. Линия их пересечения — ось проекций x₁₂. Они делят пространство на четыре четверти; обычно точку берут в первой (перед П₂ и над П₁).',
+    2:'Опускаем перпендикуляры из A на обе плоскости (ортогональное проецирование): A₁ — горизонтальная проекция, A₂ — фронтальная. Два луча AA₁ и AA₂ задают плоскость, перпендикулярную оси x₁₂. Она пересекает ось в точке Aₓ, и получается прямоугольник A A₂ Aₓ A₁ — поэтому A₂Aₓ ⟂ x₁₂ и A₁Aₓ ⟂ x₁₂.',
+    3:'Чтобы получить плоский чертёж, поворачиваем П₁ вокруг оси x₁₂ на 90° вниз, пока она не совпадёт с П₂. Отрезок AₓA₁ всё время остаётся перпендикулярным оси, поэтому после поворота A₁ оказывается на продолжении A₂Aₓ.',
+    4:'Эпюр Монжа (двухкартинный комплексный чертёж). A₁ и A₂ лежат на одной линии связи, перпендикулярной x₁₂. Расстояние A₂Aₓ — высота точки z, A₁Aₓ — глубина y. Две проекции однозначно задают точку: по ним можно восстановить её положение в пространстве. Двигайте ползунки y и z — посмотрите, что происходит в других четвертях.',
+  };
+  function calc(){ return `|A₂Aₓ| = z = <b>${st.z.toFixed(1)}</b> &nbsp;(высота над П₁) &nbsp;·&nbsp; |A₁Aₓ| = y = <b>${st.y.toFixed(1)}</b> &nbsp;(расстояние до П₂)<br>${quarter()}`; }
+
+  // ---------- камера ----------
+  const VIEWS={iso:{th:0.75,ph:1.15,r:16,t:[0,1.6,1.5]}, front:{th:0,ph:Math.PI/2,r:16,t:[0,0.6,0]}, side:{th:Math.PI/2,ph:Math.PI/2,r:16,t:[0,1,1]}};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); camera.lookAt(...cur.t);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI-0.05,Math.max(0.05,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(40,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(40,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  function goView(n){const v=VIEWS[n]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t]; while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; markView(n);}
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.view)));
+  function resize(){const s=document.getElementById('stage');renderer.setSize(s.clientWidth,s.clientHeight,false);camera.aspect=s.clientWidth/s.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    build();
+    const T=id=>document.getElementById(id);
+    const setFold=v=>{tgt.fold=v; T('fold').value=v; T('foldV').textContent=v+'°';};
+    const ui=()=>{
+      document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.step===st.step)));
+      T('text').textContent=TEXT[st.step]; T('calc').innerHTML=calc();
+      T('yV').textContent=st.y.toFixed(1); T('zV').textContent=st.z.toFixed(1);
+    };
+    document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{
+      st.step=+b.dataset.step;
+      if(st.step<=2){ setFold(0); goView('iso'); }
+      if(st.step===3){ setFold(90); goView('iso'); }
+      if(st.step===4){ setFold(90); goView('front'); }
+      ui();}));
+    T('yIn').addEventListener('input',()=>{st.y=+T('yIn').value/10; if(st.step<2) st.step=2; ui();});
+    T('zIn').addEventListener('input',()=>{st.z=+T('zIn').value/10; if(st.step<2) st.step=2; ui();});
+    T('fold').addEventListener('input',()=>{setFold(+T('fold').value); if(st.step<2) st.step=2; ui();});
+    ui();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k=reduce?1:0.1;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k;
+      // поворот П₁ — с постоянной скоростью, чтобы было видно движение
+      const df=tgt.fold-cur.fold; cur.fold += reduce ? df : Math.sign(df)*Math.min(Math.abs(df),0.9);
+      update(); placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>

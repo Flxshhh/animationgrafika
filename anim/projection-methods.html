@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Flxshhh">
+<meta name="copyright" content="© 2026 Flxshhh. Все права защищены.">
+<!-- © 2026 Flxshhh (github.com/Flxshhh). Все права защищены. Копирование без разрешения автора запрещено. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Методы проецирования</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p1:#3E9A64; --accent:#D2484F; --ok:#2E8B57; --bad:#D2484F;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p1:#62BF88; --ok:#5CC98A; --bad:#E86A70; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p1:#62BF88; --ok:#5CC98A; --bad:#E86A70; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:50vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p1);outline-offset:2px}
+.seg-label{font-size:.8rem;color:var(--muted);margin-right:2px}
+.slider{display:flex;align-items:center;gap:10px;width:100%}
+.slider label{font-size:.92rem;white-space:nowrap;min-width:11em}
+.slider input{flex:1;accent-color:var(--accent)}
+.slider[hidden]{display:none}
+#text{font-size:.92rem;line-height:1.5;max-width:72ch;margin:0 0 10px;border-left:3px solid var(--accent);padding-left:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+.ok{color:var(--ok);font-weight:700} .bad{color:var(--bad);font-weight:700}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" onclick="try{if(document.referrer&&new URL(document.referrer).pathname.replace(/index\.html$/,'')===new URL('../',location.href).pathname){history.back();return false}}catch(e){}" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Методы проецирования</h1>
+  <p>Центральное, параллельное и ортогональное — что сохраняется, а что искажается</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row" id="modes">
+    <button data-mode="central" aria-pressed="true">Центральное</button>
+    <button data-mode="parallel" aria-pressed="false">Параллельное</button>
+    <button data-mode="ortho" aria-pressed="false">Ортогональное</button>
+  </div>
+  <p id="text"></p>
+  <div id="calc"></div>
+  <div class="row" id="objs">
+    <span class="seg-label">Объект:</span>
+    <button data-obj="seg" aria-pressed="true">Отрезок AB (как на доске)</button>
+    <button data-obj="sq" aria-pressed="false">Квадрат ABCD</button>
+  </div>
+  <div class="row slider">
+    <label for="tilt">Наклон объекта к П₁: <span id="tiltV"></span></label>
+    <input id="tilt" type="range" min="0" max="60" value="35">
+  </div>
+  <div class="row slider" id="rowH">
+    <label for="sh">Высота центра S: <span id="shV"></span></label>
+    <input id="sh" type="range" min="65" max="120" value="75">
+  </div>
+  <div class="row slider" id="rowA" hidden>
+    <label for="sa">Наклон лучей к вертикали: <span id="saV"></span></label>
+    <input id="sa" type="range" min="5" max="50" value="28">
+  </div>
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="side" aria-pressed="false">Сбоку</button>
+    <button data-view="top" aria-pressed="false">Сверху</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---------- координаты: x, y — в плоскости П₁, z — вверх ----------
+  const V=(x,y,z)=>({x,y,z});
+  const add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z), mul=(a,k)=>V(a.x*k,a.y*k,a.z*k);
+  const len=a=>Math.hypot(a.x,a.y,a.z), deg=Math.PI/180;
+  const O=V(0.3,0.2,2.0), AZ=20*deg;
+  const W=p=>new THREE.Vector3(p.x,p.z,p.y);
+
+  // объект: отрезок A–M–B (M — середина) или квадрат ABCD; t — наклон к П₁
+  function objectPts(kind,t){
+    const e1=V(Math.cos(AZ),Math.sin(AZ),0);
+    const e2=V(-Math.sin(AZ)*Math.cos(t), Math.cos(AZ)*Math.cos(t), Math.sin(t));
+    if(kind==='seg'){
+      const u=V(Math.cos(AZ+90*deg)*Math.cos(t), Math.sin(AZ+90*deg)*Math.cos(t), Math.sin(t));
+      const A=sub(O,mul(u,1.5)), B=add(O,mul(u,1.5));
+      return {names:['A','M','B'], P:[A,mul(add(A,B),0.5),B], closed:false};
+    }
+    const h=1.15, P=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b])=>add(O,add(mul(e1,a*h),mul(e2,b*h))));
+    return {names:['A','B','C','D'], P, closed:true};
+  }
+  // проецирование точки на П₁ (z = 0)
+  function project(mode,S,dir,p){
+    if(mode==='central'){ const k=S.z/(S.z-p.z); return add(S,mul(sub(p,S),k)); }
+    const s = mode==='ortho' ? V(0,0,-1) : dir;
+    return add(p,mul(s,-p.z/s.z));
+  }
+
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+  const dl=new THREE.DirectionalLight(0xffffff,0.4); dl.position.set(4,10,6); scene.add(dl);
+
+  const inkMats=[];
+  const lm=(color,dashed,op=1,ink=false)=>{const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.14,gapSize:0.1,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op}); if(ink) inkMats.push(m); return m;};
+  function dline(n,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new Array(n).fill(0).map(()=>new THREE.Vector3())),mat); l.frustumCulled=false; return l;}
+  function setLine(l,pts){const p=l.geometry.attributes.position; for(let i=0;i<p.count;i++){const v=pts[Math.min(i,pts.length-1)]; p.setXYZ(i,v.x,v.y,v.z);} p.needsUpdate=true; if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  const dot=(color,s=0.08)=>new THREE.Mesh(new THREE.SphereGeometry(s,16,12),new THREE.MeshBasicMaterial({color}));
+  function label(text,color,scale=0.5){
+    const c=document.createElement('canvas'); c.width=256; c.height=128; const g=c.getContext('2d');
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*2,scale,1); s.renderOrder=20;
+    let last=''; s.setText=(t,col)=>{const k=t+col; if(k===last) return; last=k; g.clearRect(0,0,256,128); g.font='700 74px "PT Sans", Arial, sans-serif'; g.fillStyle=col; g.textAlign='center'; g.textBaseline='middle'; g.fillText(t,128,66); tex.needsUpdate=true;};
+    s.setText(text,color); return s;
+  }
+  function setTube(m,a,b){const d=new THREE.Vector3().subVectors(b,a); m.scale.set(1,Math.max(d.length(),1e-3),1); m.position.copy(a).addScaledVector(d,0.5); if(d.lengthSq()>1e-9) m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());}
+
+  const COL={obj:'#D2484F', proj:'#B5651D', ray:'#5C7A99', S:'#8A5CC8'};
+  let INK, P1C;
+  const D={};
+  function build(){
+    INK=css('--ink'); P1C=css('--p1');
+    // плоскость П₁ — «клякса», как на доске
+    const blob=[]; for(let i=0;i<=96;i++){const a=i/96*Math.PI*2, r=6.0+0.5*Math.sin(3*a+0.6)+0.3*Math.cos(5*a);
+      blob.push(new THREE.Vector2(0.4+r*Math.cos(a)*1.1, 0.8+r*Math.sin(a)*0.85));}
+    const shape=new THREE.Shape(blob); const pg=new THREE.ShapeGeometry(shape,64);
+    const pm=new THREE.Mesh(pg,new THREE.MeshBasicMaterial({color:P1C,transparent:true,opacity:0.12,side:THREE.DoubleSide,depthWrite:false}));
+    pm.rotation.x=Math.PI/2; scene.add(pm);
+    const outline=new THREE.Line(new THREE.BufferGeometry().setFromPoints(blob.map(v=>new THREE.Vector3(v.x,0.002,v.y))),lm(P1C,false,0.9)); scene.add(outline);
+    const lp=label('Π₁',P1C,0.6); lp.position.set(-4.2,0.05,5.0); scene.add(lp);
+
+    D.S=dot(COL.S,0.12); scene.add(D.S); D.Sl=label('S',COL.S,0.5); scene.add(D.Sl);
+    D.edges=dline(5,lm(COL.obj,false,1)); scene.add(D.edges);
+    D.tube=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1,10),new THREE.MeshBasicMaterial({color:COL.obj})); scene.add(D.tube);
+    D.pedges=dline(5,lm(COL.proj,false,1)); scene.add(D.pedges);
+    D.ptube=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1,10),new THREE.MeshBasicMaterial({color:COL.proj})); scene.add(D.ptube);
+    D.pts=[];
+    for(let i=0;i<4;i++){
+      const o={};
+      o.m=dot(COL.obj,0.085); scene.add(o.m); o.l=label('A',COL.obj,0.45); scene.add(o.l);
+      o.m1=dot(COL.proj,0.075); scene.add(o.m1); o.l1=label('A₁',COL.proj,0.42); scene.add(o.l1);
+      o.ray=dline(2,lm(COL.ray,false,0.8)); scene.add(o.ray);
+      o.arrow=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.28,12),new THREE.MeshBasicMaterial({color:COL.ray})); scene.add(o.arrow);
+      o.rm=dline(3,lm(INK,false,1,true)); scene.add(o.rm);
+      D.pts.push(o);
+    }
+  }
+
+  const st={mode:'central', obj:'seg', tilt:35, sh:7.5, sa:28};
+  let calcCache='';
+  function update(){
+    const t=st.tilt*deg, ob=objectPts(st.obj,t);
+    const S=V(-1.2,-1.6,st.sh), dir=(()=>{const a=st.sa*deg, b=30*deg; return V(Math.sin(a)*Math.cos(b),Math.sin(a)*Math.sin(b),-Math.cos(a));})();
+    const P1=ob.P.map(p=>project(st.mode,S,dir,p));
+    D.S.visible=D.Sl.visible=st.mode==='central';
+    D.S.position.copy(W(S)); D.Sl.position.copy(W(S)).add(new THREE.Vector3(0.3,0.3,0));
+    const seg = st.obj==='seg';
+    D.tube.visible=D.ptube.visible=seg; D.edges.visible=D.pedges.visible=!seg;
+    if(seg){ setTube(D.tube,W(ob.P[0]),W(ob.P[2])); setTube(D.ptube,W(P1[0]).setY(0.01),W(P1[2]).setY(0.01)); }
+    else { setLine(D.edges,[...ob.P,ob.P[0]].map(W)); setLine(D.pedges,[...P1,P1[0]].map(p=>W(p).setY(0.01))); }
+    D.pts.forEach((o,i)=>{
+      const on = i<ob.P.length; [o.m,o.l,o.m1,o.l1,o.ray,o.arrow,o.rm].forEach(x=>x.visible=on);
+      if(!on) return;
+      const p=ob.P[i], q=P1[i], n=ob.names[i], col= n==='M' ? COL.S : COL.obj;
+      o.m.position.copy(W(p)); o.m.material.color.set(col); o.l.setText(n,col); o.l.position.copy(W(p)).add(new THREE.Vector3(-0.25,0.3,0));
+      o.m1.position.copy(W(q).setY(0.03)); o.l1.setText(n+'₁',n==='M'?COL.S:COL.proj); o.l1.position.copy(W(q)).add(new THREE.Vector3(0.1,0.05,0.4));
+      // луч: от центра S (центральное) или «из бесконечности» (параллельное) через точку до П₁
+      const start = st.mode==='central' ? S : add(p, mul(st.mode==='ortho'?V(0,0,-1):dir, -2.6));
+      setLine(o.ray,[W(start),W(q)]);
+      const dv=new THREE.Vector3().subVectors(W(q),W(start)).normalize();
+      o.arrow.position.copy(W(p)).addScaledVector(dv,-0.75); o.arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dv);   // остриё — по ходу луча
+      // знак прямого угла у основания луча в ортогональном проецировании
+      o.rm.visible = on && st.mode==='ortho';
+      if(st.mode==='ortho'){ const b=W(q).setY(0.02), r=0.22, h=new THREE.Vector3(Math.cos(AZ),0,Math.sin(AZ));
+        setLine(o.rm,[b.clone().add(new THREE.Vector3(0,r,0)), b.clone().add(new THREE.Vector3(0,r,0)).addScaledVector(h,r), b.clone().addScaledVector(h,r)]); }
+    });
+    // расчёты
+    let html;
+    if(seg){
+      const AB=len(sub(ob.P[2],ob.P[0])), A1B1=len(sub(P1[2],P1[0]));
+      const r1=len(sub(P1[1],P1[0]))/len(sub(P1[2],P1[1]));
+      const okR=Math.abs(r1-1)<0.005;
+      html=`|AB| = ${AB.toFixed(2)}, &nbsp;|A₁B₁| = <b>${A1B1.toFixed(2)}</b> &nbsp;(${(A1B1/AB*100).toFixed(0)}% от AB)`+
+        (st.mode==='ortho'?` &nbsp;= |AB|·cos ${st.tilt}° = ${(AB*Math.cos(t)).toFixed(2)}`:'')+
+        `<br>M — середина AB. &nbsp;A₁M₁ : M₁B₁ = <span class="${okR?'ok':'bad'}">${r1.toFixed(2)}</span> ${okR?'— середина сохранилась':'— середина «уехала»'}`;
+    } else {
+      const ang=(a,b,c,d)=>{const u=sub(b,a), v=sub(d,c); const k=Math.abs(u.x*v.x+u.y*v.y)/(Math.hypot(u.x,u.y)*Math.hypot(v.x,v.y)); return Math.acos(Math.min(1,k))/deg;};
+      const g1=ang(P1[0],P1[1],P1[3],P1[2]), g2=ang(P1[1],P1[2],P1[0],P1[3]);
+      const par=g1<0.3&&g2<0.3;
+      const sides=[0,1,2,3].map(i=>len(sub(P1[(i+1)%4],P1[i])).toFixed(2));
+      html=`AB ∥ DC и BC ∥ AD в пространстве. На П₁: угол между A₁B₁ и D₁C₁ = <span class="${g1<0.3?'ok':'bad'}">${g1.toFixed(1)}°</span>, между B₁C₁ и A₁D₁ = <span class="${g2<0.3?'ok':'bad'}">${g2.toFixed(1)}°</span> — `+
+        (par?'<span class="ok">параллельность сохранилась</span>':'<span class="bad">параллельность нарушена</span>')+
+        `<br>Стороны проекции: ${sides.join(', ')} (у квадрата все 2.30)`;
+    }
+    if(html!==calcCache){ document.getElementById('calc').innerHTML=html; calcCache=html; }
+  }
+
+  const TEXT={
+    central:'Центральное (коническое): все лучи выходят из одной точки S — центра проекций. Так видит глаз и снимает камера. Проекция точки — точка, прямой — прямая. Но параллельность не сохраняется, длины и даже отношение отрезков на прямой искажаются: середина отрезка проецируется не в середину проекции. Опустите S ниже — искажение растёт.',
+    parallel:'Параллельное (косоугольное): центр S «унесли в бесконечность», и все лучи стали параллельны заданному направлению s, но наклонены к П₁. Сохраняются параллельность прямых и отношение отрезков на прямой (середина остаётся серединой). Длины и углы искажаются; фигура, параллельная П₁, проецируется в натуральную величину.',
+    ortho:'Ортогональное (прямоугольное): частный случай параллельного — лучи перпендикулярны П₁. Сохраняет всё, что и параллельное, плюс простую связь длин: |A₁B₁| = |AB|·cos α, где α — наклон AB к П₁. Отсюда метод прямоугольного треугольника и теорема о прямом угле. На этом методе построен эпюр Монжа.',
+  };
+
+  // ---------- камера ----------
+  const VIEWS={ iso:{th:0.65,ph:1.08,r:19,t:[0.3,2.2,0.6]}, side:{th:0,ph:Math.PI/2-0.02,r:19,t:[0.3,2.8,0.6]}, top:{th:0,ph:0.001,r:19,t:[0.3,0,0.8]} };
+  const cur={...VIEWS.iso,t:[...VIEWS.iso.t]}, tgt={...VIEWS.iso,t:[...VIEWS.iso.t]};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); if(cur.ph<0.01) camera.up.set(0,0,-1); camera.lookAt(...cur.t);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI/2+0.3,Math.max(0.001,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(45,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(45,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>{const v=VIEWS[b.dataset.view]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t];
+    while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; markView(b.dataset.view);}));
+  function resize(){const s=document.getElementById('stage');renderer.setSize(s.clientWidth,s.clientHeight,false);camera.aspect=s.clientWidth/s.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    build();
+    const T=id=>document.getElementById(id);
+    const ui=()=>{
+      document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===st.mode)));
+      document.querySelectorAll('#objs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.obj===st.obj)));
+      T('rowH').hidden = st.mode!=='central'; T('rowA').hidden = st.mode!=='parallel';
+      T('text').textContent=TEXT[st.mode];
+      T('tiltV').textContent=st.tilt+'°'; T('shV').textContent=st.sh.toFixed(1); T('saV').textContent=st.sa+'°';
+      update();
+    };
+    document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>{st.mode=b.dataset.mode;ui();}));
+    document.querySelectorAll('#objs button').forEach(b=>b.addEventListener('click',()=>{st.obj=b.dataset.obj;ui();}));
+    T('tilt').addEventListener('input',()=>{st.tilt=+T('tilt').value;ui();});
+    T('sh').addEventListener('input',()=>{st.sh=+T('sh').value/10;ui();});
+    T('sa').addEventListener('input',()=>{st.sa=+T('sa').value;ui();});
+    ui();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k=reduce?1:0.12;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k;
+      placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>

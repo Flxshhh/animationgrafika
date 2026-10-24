@@ -138,6 +138,26 @@ footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--rule);padd
 const LECTURES = [
   // { id:'l1', n:1, title:'…', desc:'…', topics:[ … ] },
 
+  { id:'l1', n:1, title:'', desc:'', topics:[
+    {num:'1.1', href:'anim/projection-methods.html', icon:'projection',
+     title:'Методы проецирования', desc:'Центральное, параллельное и ортогональное: что сохраняется, а что искажается.',
+     tags:['центральное','параллельное','ортогональное'], keys:'проецирование центр проекций S коническое косоугольное прямоугольное свойства параллельность середина отрезка'},
+    {num:'1.2', href:'anim/two-view-drawing.html', icon:'twoview',
+     title:'Двухкартинный комплексный чертёж', desc:'Как из точки в пространстве получается эпюр Монжа. Четверти пространства.',
+     tags:['П₁ и П₂','x₁₂','эпюр Монжа'], keys:'двухкартинный комплексный чертеж точки линия связи четверть координаты глубина высота'},
+    {num:'1.3', href:'anim/three-view-drawing.html', icon:'threeview',
+     title:'Трёхкартинный комплексный чертёж', desc:'Точка A(x, y, z) и три её проекции. Перенос y дугой или постоянной прямой 45°.',
+     tags:['П₃','A(x, y, z)','постоянная прямая'], keys:'трехкартинный комплексный чертеж точки профильная плоскость оси y13 z23 координаты'},
+    {num:'1.4', href:'anim/point-on-line.html', icon:'pointline',
+     title:'Точка на прямой', desc:'Признак принадлежности точки прямой: A ∈ l, B ∉ l. Почему нужны обе проекции.',
+     tags:['A ∈ l','конкурирующие точки'], keys:'принадлежность точки прямой признак линия связи'},
+    {num:'1.4', href:'anim/right-triangle.html', icon:'triangle',
+     title:'Метод прямоугольного треугольника', desc:'Почему гипотенуза равна натуральной величине отрезка. Углы α и β.',
+     tags:['н.в. отрезка','Δz','Δy','α','β'], keys:'натуральная величина длина отрезка угол наклона к плоскости проекций'},
+    {num:'1.5', href:'anim/line-classes.html', icon:'lineclasses',
+     title:'Классификация прямых линий', desc:'Общего положения, уровня (h, f, p) и проецирующие — как узнать по эпюру.',
+     tags:['горизонталь','фронталь','профильная','проецирующие'], keys:'классификация прямых частного положения уровня общего положения натуральная величина вырождается в точку'},
+  ]},
   { id:'l2', n:2, title:'', desc:'', topics:[
     {href:'anim/two-lines.html', icon:'twolines',
      title:'Взаимное расположение прямых в пространстве', desc:'Скрещивающиеся, пересекающиеся, параллельные — как отличить по эпюру.',
@@ -157,9 +177,6 @@ const LECTURES = [
     {href:'anim/profile-line.html', icon:'profile',
      title:'Профильная прямая', desc:'Почему двух проекций мало и как помогает П₃. Ловушка с точкой C.',
      tags:['П₃','н.в.','α + β = 90°'], keys:'профильная плоскость натуральная величина углы наклона принадлежность точки прямой'},
-    {href:'anim/right-triangle.html', icon:'triangle',
-     title:'Метод прямоугольного треугольника', desc:'Почему гипотенуза равна натуральной величине отрезка. Углы α и β.',
-     tags:['н.в. отрезка','Δz','Δy','α','β'], keys:'натуральная величина длина отрезка угол наклона к плоскости проекций'},
     {href:'anim/line-plane.html', icon:'plane',
      title:'Прямая и плоскость общего положения', desc:'Точка K = l ∩ ABC через вспомогательную проецирующую плоскость Γ.',
      tags:['Γ ⊥ П₁','точка встречи','видимость'], keys:'пересечение прямой с плоскостью треугольник конкурирующие точки посредник'},
@@ -185,6 +202,11 @@ const ICONS = {
   pyramid:`<path d="M36 12 L14 56 L44 64 L62 50 Z M36 12 L44 64" ${S}/><path d="M14 56 L62 50" ${S} ${D}/><path d="M8 30 L68 46" stroke="var(--red)" stroke-width="2" fill="none"/>`,
   cylinder:`<ellipse cx="38" cy="18" rx="18" ry="6" ${S}/><path d="M20 18v40M56 18v40" ${S}/><path d="M20 58 A18 6 0 0 0 56 58" ${S}/><path d="M20 58 A18 6 0 0 1 56 58" ${S} ${D}/><path d="M8 52 L68 26" stroke="var(--red)" stroke-width="2" fill="none"/>`,
   rightangle:`<path d="M10 58 L66 58" ${S} opacity=".45"/><path d="M20 50 L56 50" stroke="var(--p2)" stroke-width="2" fill="none"/><path d="M20 50 L20 16" stroke="var(--red)" stroke-width="2" fill="none"/><path d="M20 42h8v8" ${S}/><circle cx="20" cy="50" r="2.6" fill="currentColor"/>`,
+  projection:`<circle cx="18" cy="12" r="3" fill="var(--p2)"/><path d="M18 12 L30 66 M18 12 L62 66" ${S} opacity=".5" ${D}/><path d="M26 36 L44 36" stroke="var(--red)" stroke-width="2" fill="none"/><path d="M8 66 H70" ${S}/><path d="M30 66 L62 66" stroke="var(--red)" stroke-width="2.4" fill="none"/>`,
+  twoview:`<path d="M8 38 H68" ${S}/><path d="M38 12 V64" ${S} opacity=".45" ${D}/><circle cx="38" cy="22" r="2.8" fill="var(--red)"/><circle cx="38" cy="56" r="2.8" fill="var(--red)"/>`,
+  threeview:`<path d="M8 38 H68 M38 10 V66" ${S}/><path d="M38 38 L66 66" ${S} opacity=".45" ${D}/><circle cx="20" cy="22" r="2.6" fill="var(--red)"/><circle cx="20" cy="54" r="2.6" fill="var(--red)"/><circle cx="54" cy="22" r="2.6" fill="var(--red)"/><path d="M20 22 H54 M20 22 V54" ${S} opacity=".5" ${D}/>`,
+  pointline:`<path d="M10 60 L66 16" stroke="var(--p2)" stroke-width="2" fill="none"/><circle cx="30" cy="44" r="3" fill="var(--red)"/><circle cx="50" cy="22" r="3" fill="currentColor"/><path d="M50 22 L50 34" ${S} ${D}/><circle cx="50" cy="35" r="2" fill="none" stroke="currentColor"/>`,
+  lineclasses:`<path d="M10 20 H40" stroke="var(--red)" stroke-width="2" fill="none"/><path d="M50 12 V40" stroke="var(--p2)" stroke-width="2" fill="none"/><path d="M12 64 L40 44" stroke="var(--p1)" stroke-width="2" fill="none"/><circle cx="58" cy="56" r="3.2" fill="currentColor"/>`,
   generic:`<path d="M14 62 L38 14 L62 62" ${S} ${D}/><path d="M10 62h56" ${S}/><path d="M38 14v48" ${S} opacity=".45"/><circle cx="38" cy="40" r="3" fill="var(--red)"/>`,
 };
 
@@ -198,7 +220,7 @@ LECTURES.sort((a,b)=>(a.n??1e9)-(b.n??1e9));
 const ALL = [];
 LECTURES.forEach(L => L.topics.forEach(it => {
   it.lec = L;
-  it.hay = norm([it.title, it.desc, it.tags.join(' '), it.keys||'', it.tags.join(' ').replace(/\./g,''), lname(L), L.title].join(' '));
+  it.hay = norm([it.title, it.desc, it.tags.join(' '), it.keys||'', it.tags.join(' ').replace(/\./g,''), lname(L), L.title, it.num||''].join(' '));
   ALL.push(it);
 }));
 
@@ -221,7 +243,7 @@ function cardHTML(it, hw, showWhere){
   return `<a class="card" href="${it.href}">
     <svg class="ico" viewBox="0 0 76 76" aria-hidden="true">${ICONS[it.icon]||ICONS.generic}</svg>
     <div class="body">
-      ${showWhere?`<span class="where">${esc(lname(it.lec))}</span>`:''}
+      ${it.num?`<span class="where">${esc(it.num)}</span>`:''}
       <h3>${hl(it.title,hw)}</h3>
       <p>${hl(it.desc,hw)}</p>
       <div class="tags">${it.tags.map(g=>`<span>${hl(g,hw)}</span>`).join('')}</div>
@@ -266,7 +288,7 @@ function render(){
   list.innerHTML = `<section><div class="grid">${LECTURES.map(Lc=>`
     <a class="folder" href="#${Lc.id}" data-tab="${esc(Lc.n?'ЛЕКЦИЯ '+Lc.n:'ПАПКА')}">
       <h3>${esc(Lc.title||lname(Lc))}</h3>
-      <ul>${Lc.topics.slice(0,4).map(t=>`<li>${esc(t.title)}</li>`).join('')}${Lc.topics.length>4?`<li>и ещё ${Lc.topics.length-4}</li>`:''}</ul>
+      <ul>${Lc.topics.slice(0,4).map(t=>`<li>${t.num?esc(t.num)+' ':''}${esc(t.title)}</li>`).join('')}${Lc.topics.length>4?`<li>и ещё ${Lc.topics.length-4}</li>`:''}</ul>
       <span class="count">${plural(Lc.topics.length,'тема','темы','тем')}</span>
     </a>`).join('')}</div></section>`;
 }

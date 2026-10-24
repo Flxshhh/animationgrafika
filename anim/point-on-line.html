@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Flxshhh">
+<meta name="copyright" content="© 2026 Flxshhh. Все права защищены.">
+<!-- © 2026 Flxshhh (github.com/Flxshhh). Все права защищены. Копирование без разрешения автора запрещено. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Точка на прямой</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:48vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.steps button{border-style:dashed}
+.steps button[aria-pressed="true"]{border-style:solid}
+.fold{display:flex;align-items:center;gap:10px;width:100%}
+.fold label{font-size:.92rem;white-space:nowrap}
+.fold input{flex:1;accent-color:var(--p1)}
+.toggles label{font-size:.9rem;display:flex;gap:6px;align-items:center;margin-right:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+#tA{accent-color:#D2484F} #dB{accent-color:#8A5CC8}
+#stepText{font-size:.92rem;line-height:1.5;max-width:70ch;margin:0;border-left:3px solid var(--p2);padding-left:10px}
+</style>
+</head>
+<body>
+<a class="cat-back" href="../index.html" onclick="try{if(document.referrer&&new URL(document.referrer).pathname.replace(/index\.html$/,'')===new URL('../',location.href).pathname){history.back();return false}}catch(e){}" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 13px/1 'PT Sans',Arial,sans-serif;padding:7px 10px;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Точка на прямой: A ∈ l, B ∉ l</h1>
+  <p>Признак принадлежности точки прямой на эпюре</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row steps" id="steps">
+    <button data-step="1" aria-pressed="true">1. Прямая l</button>
+    <button data-step="2" aria-pressed="false">2. A ∈ l</button>
+    <button data-step="3" aria-pressed="false">3. B ∉ l</button>
+    <button data-step="4" aria-pressed="false">4. Почему двух проекций нужно обе</button>
+  </div>
+  <p id="stepText"></p>
+  <div id="calc"></div>
+  <div class="row fold">
+    <label for="tA">Положение A на l: <span id="tAV"></span></label>
+    <input id="tA" type="range" min="5" max="95" value="35">
+  </div>
+  <div class="row fold">
+    <label for="dB">Отклонение B от l (по y): <span id="dBV"></span></label>
+    <input id="dB" type="range" min="-20" max="20" value="14">
+  </div>
+  <div class="row" id="views" style="margin-top:10px">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Вид на П₂</button>
+    <button data-view="top" aria-pressed="false">Вид на П₁</button>
+    <button data-view="epure" aria-pressed="false">Эпюр</button>
+  </div>
+  <div class="row fold">
+    <label for="fold">Поворот П₁: <span id="foldVal">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row toggles">
+    <label><input type="checkbox" id="tSpace" checked> Объекты в пространстве</label>
+    <label><input type="checkbox" id="tSig" checked> Плоскость Σ ⟂ П₂ через l</label>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // ---------- Монж: x; y — к наблюдателю; z — вверх ----------
+  const V=(x,y,z)=>({x,y,z});
+  const add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z), sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z), mul=(a,k)=>V(a.x*k,a.y*k,a.z*k);
+  // прямая l (как на доске: l₂ поднимается вправо, l₁ уходит вниз вправо)
+  const P=V(-2.8,1.0,1.0), Q=V(2.6,4.6,4.2), d=sub(Q,P);
+  const L=t=>add(P,mul(d,t));
+  const tB=0.62;   // B₂ лежит на l₂ в этой точке
+
+  const PLANE_V=5.6, PLANE_H=6.0, HALF_X=3.6, deg=Math.PI/180;
+  const W=p=>new THREE.Vector3(p.x,p.z,p.y);
+  const on2=(p,e=0.02)=>new THREE.Vector3(p.x,p.z,e);
+  const on1=(p,e=0.02)=>new THREE.Vector3(p.x,e,p.y);
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+
+  const inkMats=[];
+  const lm=(color,dashed,op=1,ink=false)=>{const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.13,gapSize:0.09,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op}); if(ink) inkMats.push(m); return m;};
+  function dline(n,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new Array(n).fill(0).map(()=>new THREE.Vector3())),mat); l.frustumCulled=false; return l;}
+  function setLine(l,pts){const p=l.geometry.attributes.position; for(let i=0;i<p.count;i++){const v=pts[Math.min(i,pts.length-1)]; p.setXYZ(i,v.x,v.y,v.z);} p.needsUpdate=true; if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  const seg=(a,b,m)=>{const l=dline(2,m); setLine(l,[a,b]); return l;};
+  function tube(a,b,color,rad=0.035){const dir=new THREE.Vector3().subVectors(b,a), l=dir.length(); const m=new THREE.Mesh(new THREE.CylinderGeometry(rad,rad,l,10),new THREE.MeshBasicMaterial({color})); m.position.copy(a).addScaledVector(dir,0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize()); return m;}
+  const dot=(c,s=0.08)=>new THREE.Mesh(new THREE.SphereGeometry(s,16,12),new THREE.MeshBasicMaterial({color:c}));
+  function label(text,color,scale=0.5){
+    const c=document.createElement('canvas'); c.width=320; c.height=128; const g=c.getContext('2d');
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*2.5,scale,1); s.renderOrder=20;
+    let last=''; s.setText=(t,col)=>{const k=t+col; if(k===last) return; last=k; g.clearRect(0,0,320,128); g.font='700 72px "PT Sans", Arial, sans-serif'; g.fillStyle=col; g.textAlign='center'; g.textBaseline='middle'; g.fillText(t,160,66); tex.needsUpdate=true;};
+    s.setText(text,color); return s;
+  }
+
+  let INK,P1C,P2C;
+  const COL={l:'#3F5FBF', A:'#D2484F', B:'#8A5CC8', K:'#C08A1A', ok:'#2E8B57', bad:'#D2484F'};
+  const p2g=new THREE.Group(), p1g=new THREE.Group(); scene.add(p2g); scene.add(p1g);
+  const grp={}; ['base','A','B','sig'].forEach(k=>{grp[k]={s:new THREE.Group(),p1:new THREE.Group(),p2:new THREE.Group(),k:new THREE.Group()}; scene.add(grp[k].s); p1g.add(grp[k].p1); p2g.add(grp[k].p2); scene.add(grp[k].k);});
+  const setVis=(g,on,sp)=>{g.s.visible=on&&sp; g.p1.visible=g.p2.visible=g.k.visible=on;};
+
+  // точка с проекциями, обновляемая на лету
+  function mkPoint(g,c,n,size=0.085){
+    const o={};
+    o.m=dot(c,size); g.s.add(o.m); o.l=label(n,c,0.45); g.s.add(o.l);
+    o.m2=dot(c,size*0.85); g.p2.add(o.m2); o.l2=label(n+'₂',c,0.4); g.p2.add(o.l2);
+    o.m1=dot(c,size*0.85); g.p1.add(o.m1); o.l1=label(n+'₁',c,0.4); g.p1.add(o.l1);
+    o.L2=dline(2,lm(P2C,true,0.65)); g.s.add(o.L2); o.L1=dline(2,lm(P1C,true,0.65)); g.s.add(o.L1);
+    o.k2=dline(2,lm(INK,false,0.5,true)); g.k.add(o.k2); o.k1=dline(2,lm(INK,false,0.5,true)); g.k.add(o.k1);
+    o.set=(p,off2,off1)=>{ o.p=p; o.w=W(p); o.m.position.copy(o.w); o.l.position.copy(o.w).add(new THREE.Vector3(0.3,0.28,0));
+      o.m2.position.copy(on2(p,0.03)); o.l2.position.copy(on2(p,0.035)).add(new THREE.Vector3(off2[0],off2[1],0));
+      o.m1.position.copy(on1(p,0.03)); o.l1.position.copy(on1(p,0.035)).add(new THREE.Vector3(off1[0],0,-off1[1]));
+      setLine(o.L2,[o.w,on2(p,0.03)]); o.xa=new THREE.Vector3(p.x,0,0); setLine(o.k2,[on2(p,0.03),o.xa]); };
+    return o;
+  }
+
+  const D={};
+  function build(){
+    INK=css('--ink'); P1C=css('--p1'); P2C=css('--p2');
+    const pl=(w,h,c)=>new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.08,side:THREE.DoubleSide,depthWrite:false}));
+    const p2=pl(HALF_X*2,PLANE_V,P2C); p2.position.set(0,PLANE_V/2,0); p2g.add(p2);
+    const e2=new THREE.LineSegments(new THREE.EdgesGeometry(p2.geometry),new THREE.LineBasicMaterial({color:P2C,transparent:true,opacity:0.6})); e2.position.copy(p2.position); p2g.add(e2);
+    const l2=label('Π₂',P2C,0.55); l2.position.set(-HALF_X+0.5,PLANE_V-0.35,0.02); p2g.add(l2);
+    const p1=pl(HALF_X*2,PLANE_H,P1C); p1.rotation.x=-Math.PI/2; p1.position.set(0,0,PLANE_H/2); p1g.add(p1);
+    const e1=new THREE.LineSegments(new THREE.EdgesGeometry(p1.geometry),new THREE.LineBasicMaterial({color:P1C,transparent:true,opacity:0.6})); e1.rotation.copy(p1.rotation); e1.position.copy(p1.position); p1g.add(e1);
+    const l1=label('Π₁',P1C,0.55); l1.position.set(-HALF_X+0.5,0.02,PLANE_H-0.35); p1g.add(l1);
+    scene.add(seg(new THREE.Vector3(-HALF_X,0,0),new THREE.Vector3(HALF_X,0,0),lm(INK,false,1,true)));
+    const lx=label('x₁₂',INK,0.42); lx.position.set(-HALF_X-0.4,0,0); scene.add(lx);
+
+    // прямая l
+    const b=grp.base;
+    b.s.add(tube(W(P),W(Q),COL.l));
+    b.p2.add(seg(on2(P,0.012),on2(Q,0.012),lm(COL.l,false,1)));
+    b.p1.add(seg(on1(P,0.012),on1(Q,0.012),lm(COL.l,false,1)));
+    const t=(s,p,o,g)=>{const x=label(s,COL.l,0.45); x.position.copy(p).add(o); g.add(x);};
+    t('l',W(Q),new THREE.Vector3(0.25,0.25,0),b.s); t('l₂',on2(Q,0.03),new THREE.Vector3(0.3,0.15,0),b.p2); t('l₁',on1(Q,0.03),new THREE.Vector3(0.3,0,0.2),b.p1);
+
+    // Σ ⟂ П₂ через l: все точки с проекцией на l₂ лежат в ней
+    const s=grp.sig, e0=add(P,mul(d,-0.05)), e1_=add(P,mul(d,1.05));
+    const q=[V(e0.x,0.15,e0.z),V(e1_.x,0.15,e1_.z),V(e1_.x,5.8,e1_.z),V(e0.x,5.8,e0.z)].map(W);
+    const g=new THREE.BufferGeometry().setFromPoints(q); g.setIndex([0,1,2,0,2,3]);
+    s.s.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:COL.K,transparent:true,opacity:0.13,side:THREE.DoubleSide,depthWrite:false})));
+    s.s.add((()=>{const l=dline(5,lm(COL.K,false,0.7)); setLine(l,[...q,q[0]]); return l;})());
+    const ls=label('Σ ⟂ П₂',COL.K,0.38); ls.position.copy(q[2]).add(new THREE.Vector3(0.2,0.25,0)); s.s.add(ls);
+
+    D.A=mkPoint(grp.A,COL.A,'A');
+    D.B=mkPoint(grp.B,COL.B,'B');
+    D.K=mkPoint(grp.B,COL.K,'K',0.07);          // K ∈ l — «двойник» B на П₂
+    D.KB=dline(2,lm(COL.K,false,0.9)); grp.B.s.add(D.KB);
+    D.flag=label('',COL.ok,0.36); grp.B.p1.add(D.flag);
+  }
+
+  const st={step:1, tA:0.35, dB:1.4};
+  function update(){
+    const A=L(st.tA), K=L(tB), B=add(K,V(0,st.dB,0));
+    D.A.set(A,[-0.3,0.28],[-0.4,-0.15]);
+    D.K.set(K,[-0.45,-0.05],[-0.4,0.15]);
+    D.B.set(B,[0.15,0.32],[0.42,-0.1]);
+    // при dB = 0 B совпадает с K — скрываем K, чтобы не двоилось
+    const same=Math.abs(st.dB)<0.05;
+    [D.K.m,D.K.l,D.K.m1,D.K.l1,D.K.m2,D.K.l2,D.KB,D.K.L1,D.K.L2,D.K.k1,D.K.k2].forEach(o=>o.visible=!same);
+    D.K.l2.visible=false;    // K₂ ≡ B₂: подписываем одной меткой
+    D.B.l2.setText(same?'B₂':'B₂ ≡ K₂',COL.B);
+    setLine(D.KB,[W(K),W(B)]);
+    const on=same;
+    D.flag.setText(on?'B₁ ∈ l₁':'B₁ ∉ l₁', on?COL.ok:COL.bad);
+    D.flag.position.copy(on1(B,0.04)).add(new THREE.Vector3(0.9,0,0.45));
+  }
+  function updateFold(fold){
+    p1g.rotation.x=fold*deg; p1g.updateMatrixWorld(true);
+    const fade=Math.max(0,1-fold/60), t=new THREE.Vector3();
+    [D.A,D.B,D.K].forEach(o=>{o.m1.getWorldPosition(t); setLine(o.L1,[o.w,t]); o.L1.material.opacity=0.65*fade; setLine(o.k1,[o.xa,t]);});
+  }
+
+  const TEXT={
+    1:'Прямая l задана проекциями l₁ и l₂. Каждая точка прямой проецируется в точку на l₁ и в точку на l₂, и эти две точки лежат на одной линии связи.',
+    2:'Признак: A ∈ l, если A₁ ∈ l₁ и A₂ ∈ l₂ (и A₁A₂ — одна линия связи). Двигайте A ползунком — обе проекции скользят по проекциям прямой.',
+    3:'B₂ лежит на l₂, но B₁ не лежит на l₁ — значит, B ∉ l. В пространстве видно почему: на l есть точка K с той же фронтальной проекцией (K₂ ≡ B₂). B и K лежат на одном перпендикуляре к П₂ — это конкурирующие точки, они различаются только глубиной y. Поставьте отклонение в 0 — B₁ попадёт на l₁, и B окажется на прямой.',
+    4:'Почему одной проекции мало: все точки, у которых проекция лежит на l₂, заполняют целую плоскость Σ ⟂ П₂, проходящую через l. Условие B₂ ∈ l₂ говорит лишь, что B ∈ Σ. Аналогично B₁ ∈ l₁ значит, что B лежит в плоскости ⟂ П₁ через l. Прямая — пересечение этих двух плоскостей, поэтому нужны оба условия. Исключение — профильная прямая: у неё обе такие плоскости совпадают, и проверка ведётся по П₃ или через отношение отрезков.',
+  };
+  function calcHTML(){
+    const same=Math.abs(st.dB)<0.05;
+    return `A: A₁ ∈ l₁ <span style="color:${COL.ok}">✔</span>, A₂ ∈ l₂ <span style="color:${COL.ok}">✔</span> → <b>A ∈ l</b><br>`+
+      `B: B₂ ∈ l₂ <span style="color:${COL.ok}">✔</span>, B₁ ∈ l₁ <span style="color:${same?COL.ok:COL.bad}">${same?'✔':'✘'}</span> → <b>${same?'B ∈ l':'B ∉ l'}</b> &nbsp;(отклонение по y: ${st.dB.toFixed(1)})`;
+  }
+
+  const VIEWS={
+    iso:{th:0.72,ph:1.12,r:16,t:[0,2.2,2.6],fold:0},
+    front:{th:0,ph:Math.PI/2,r:14,t:[0,2.7,0],fold:0},
+    top:{th:0,ph:0.001,r:14,t:[0,0,3.0],fold:0},
+    epure:{th:0,ph:Math.PI/2,r:19,t:[0,-0.3,0],fold:90},
+  };
+  const cur={...VIEWS.iso,t:[...VIEWS.iso.t]}, tgt={...VIEWS.iso,t:[...VIEWS.iso.t]};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); if(cur.ph<0.01) camera.up.set(0,0,-1); camera.lookAt(cur.t[0],cur.t[1],cur.t[2]);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI-0.05,Math.max(0.001,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(40,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(40,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  const foldIn=document.getElementById('fold'), foldVal=document.getElementById('foldVal');
+  foldIn.addEventListener('input',()=>{tgt.fold=+foldIn.value;foldVal.textContent=foldIn.value+'°';});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>{const v=VIEWS[b.dataset.view]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t];tgt.fold=v.fold;
+    while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; foldIn.value=v.fold;foldVal.textContent=v.fold+'°';markView(b.dataset.view);}));
+  function resize(){const s=document.getElementById('stage');renderer.setSize(s.clientWidth,s.clientHeight,false);camera.aspect=s.clientWidth/s.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    build();
+    const T=id=>document.getElementById(id);
+    const apply=()=>{
+      const sp=T('tSpace').checked;
+      setVis(grp.base,true,sp); setVis(grp.A,st.step>=2,sp); setVis(grp.B,st.step>=3,sp);
+      setVis(grp.sig,st.step>=3&&T('tSig').checked,sp);
+      T('tSig').parentElement.style.display = st.step>=3 ? 'flex' : 'none';
+      document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.step===st.step)));
+      T('stepText').textContent=TEXT[st.step]; T('calc').innerHTML=calcHTML();
+      T('tAV').textContent=Math.round(st.tA*100)+'%'; T('dBV').textContent=st.dB.toFixed(1);
+      update();
+    };
+    document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{st.step=+b.dataset.step;apply();}));
+    T('tA').addEventListener('input',()=>{st.tA=+T('tA').value/100; if(st.step<2) st.step=2; apply();});
+    T('dB').addEventListener('input',()=>{st.dB=+T('dB').value/10; if(st.step<3) st.step=3; apply();});
+    ['tSpace','tSig'].forEach(id=>T(id).addEventListener('change',apply));
+    apply();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k=reduce?1:0.12;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k; cur.fold+=(tgt.fold-cur.fold)*k;
+      updateFold(cur.fold); placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>
