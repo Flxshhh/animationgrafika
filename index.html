@@ -183,6 +183,15 @@ const LECTURES = [
     {num:'2.3', href:'anim/plane-line-point.html', icon:'planepoint',
      title:'Плоскость, прямая и точка на плоскости', desc:'Как по l₂ достроить l₁ в плоскости Σ(ABC) и найти K₁ по K₂.',
      tags:['Σ(ABC)','l ⊂ Σ','K ∈ Σ'], keys:'принадлежность прямой плоскости принадлежность точки плоскости треугольник задание плоскости'},
+    {num:'2.4', href:'anim/plane-classes.html', icon:'planeclasses',
+     title:'Классификация плоскостей', desc:'Общего положения, проецирующие и уровня: как узнать по эпюру.',
+     tags:['проецирующие','уровня','собирательное свойство'], keys:'плоскость общего положения фронтально-проецирующая горизонтально-проецирующая профильно-проецирующая горизонтальная фронтальная профильная плоскость уровня натуральная величина'},
+    {num:'2.5', href:'anim/plane-lines.html', icon:'planelines',
+     title:'Основные линии плоскости, линия ската', desc:'Горизонталь и фронталь плоскости. Задача: построить линию ската и найти угол α.',
+     tags:['горизонталь h','фронталь f','линия ската'], keys:'особые линии плоскости линия наибольшего наклона угол наклона плоскости к П1 теорема о прямом угле'},
+    {num:'2.6', href:'anim/line-plane-main.html', icon:'plane',
+     title:'Основная задача: пересечение прямой с плоскостью', desc:'Точка M = l ∩ ABC через Σ ⟂ П₂ и видимость прямой по конкурирующим точкам.',
+     tags:['Σ ⟂ П₂','точка M','видимость'], keys:'основная задача начертательной геометрии точка пересечения прямой с плоскостью вспомогательная плоскость конкурирующие точки'},
   ]},
 
   { id:'unsorted', n:null, title:'Пока без лекции', desc:'Готовые анимации, которые ещё не разложены по лекциям.', topics:[
@@ -226,6 +235,8 @@ const ICONS = {
   pointline:`<path d="M10 60 L66 16" stroke="var(--p2)" stroke-width="2" fill="none"/><circle cx="30" cy="44" r="3" fill="var(--red)"/><circle cx="50" cy="22" r="3" fill="currentColor"/><path d="M50 22 L50 34" ${S} ${D}/><circle cx="50" cy="35" r="2" fill="none" stroke="currentColor"/>`,
   lineclasses:`<path d="M10 20 H40" stroke="var(--red)" stroke-width="2" fill="none"/><path d="M50 12 V40" stroke="var(--p2)" stroke-width="2" fill="none"/><path d="M12 64 L40 44" stroke="var(--p1)" stroke-width="2" fill="none"/><circle cx="58" cy="56" r="3.2" fill="currentColor"/>`,
   planepoint:`<path d="M10 56 L30 14 L66 44 Z" ${S}/><path d="M8 40 L68 26" stroke="var(--p2)" stroke-width="2" fill="none"/><circle cx="47" cy="30.5" r="3" fill="var(--red)"/>`,
+  planeclasses:`<path d="M10 52 L28 18 L52 30 Z" ${S}/><path d="M42 62 L66 14" stroke="var(--red)" stroke-width="2.2" fill="none"/><path d="M8 66 H70" ${S} opacity=".45"/>`,
+  planelines:`<path d="M10 58 L30 12 L66 46 Z" ${S}/><path d="M18 40 L52 34" stroke="var(--p1)" stroke-width="2" fill="none"/><path d="M33 18 L40 52" stroke="var(--red)" stroke-width="2.2" fill="none"/><circle cx="34" cy="24" r="3.2" fill="#E0A030"/>`,
   generic:`<path d="M14 62 L38 14 L62 62" ${S} ${D}/><path d="M10 62h56" ${S}/><path d="M38 14v48" ${S} opacity=".45"/><circle cx="38" cy="40" r="3" fill="var(--red)"/>`,
 };
 

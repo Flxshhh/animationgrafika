@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Flxshhh">
+<meta name="copyright" content="© 2026 Flxshhh. Все права защищены.">
+<!-- © 2026 Flxshhh (github.com/Flxshhh). Все права защищены. Копирование без разрешения автора запрещено. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Классификация плоскостей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64; --p3:#B5651D; --accent:#D2484F;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --p3:#E0954F; --accent:#E86A70; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; --p3:#E0954F; --accent:#E86A70; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:50vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.steps button{border-style:dashed;padding:5px 10px}
+.steps button[aria-pressed="true"]{border-style:solid}
+.slider{display:flex;align-items:center;gap:10px;width:100%}
+.slider label{font-size:.92rem;white-space:nowrap;min-width:10.5em}
+.slider input{flex:1}
+#xIn{accent-color:var(--accent)} #yIn{accent-color:var(--p1)} #zIn{accent-color:var(--p2)} #fold{accent-color:var(--p1)}
+.tag-ok{color:#2E8B57;font-weight:700} .tag-pt{color:#B5651D;font-weight:700}
+#text{font-size:.92rem;line-height:1.5;max-width:72ch;margin:0 0 10px;border-left:3px solid var(--accent);padding-left:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=PT+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<a class="cat-back" href="../index.html" onclick="try{if(document.referrer&&new URL(document.referrer).pathname.replace(/index\.html$/,'')===new URL('../',location.href).pathname){history.back();return false}}catch(e){}" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 14px/1 'PT Sans',Arial,sans-serif;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Классификация плоскостей</h1>
+  <p>Общего положения, проецирующие и уровня — как узнать по эпюру</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row steps" id="steps">
+    <button data-step="g" aria-pressed="true">1. Общего положения</button>
+    <button data-step="s" aria-pressed="false">2. Σ ⟂ П₂</button>
+    <button data-step="d" aria-pressed="false">3. Δ ⟂ П₁</button>
+    <button data-step="l" aria-pressed="false">4. Λ ⟂ П₃</button>
+    <button data-step="o" aria-pressed="false">5. Ω ∥ П₁</button>
+    <button data-step="f" aria-pressed="false">6. Φ ∥ П₂</button>
+    <button data-step="p" aria-pressed="false">7. Ψ ∥ П₃</button>
+  </div>
+  <p id="text"></p>
+  <div id="calc"></div>
+  <div class="row slider">
+    <label for="fold">Развёртка: <span id="foldV">0°</span></label>
+    <input id="fold" type="range" min="0" max="90" value="0">
+  </div>
+  <div class="row">
+    <label style="font-size:.9rem;display:flex;gap:6px;align-items:center;margin-right:10px"><input type="checkbox" id="tLink" checked> Линии связи</label>
+    <label style="font-size:.9rem;display:flex;gap:6px;align-items:center"><input type="checkbox" id="tSpace" checked> Плоскость в пространстве</label>
+  </div>
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="front" aria-pressed="false">Эпюр</button>
+    <button data-view="top" aria-pressed="false">Вид на П₁</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // Монж: x — влево от O, y — к наблюдателю, z — вверх. three.js: X = −x, Y = z, Z = y
+  const V=(x,y,z)=>({x,y,z}), deg=Math.PI/180, SX=6.2, SY=5.2, SZ=5.2;
+  // 7 видов плоскостей, каждая задана треугольником
+  const zS=1.4+(3.6-4.4)*(1.6/-2.6);
+  const PLANES={
+    g:{n:'Γ', pts:['K','L','M'], P:[V(4.6,4.2,2.6),V(1.6,2.6,4.4),V(3.2,0.4,0.6)]},
+    s:{n:'Σ', pts:['A','B','C'], P:[V(4.4,2.6,1.4),V(3.6,1.2,zS),V(1.8,3.8,3.0)]},
+    d:{n:'Δ', pts:['A','B','C'], P:[V(4.6,1.0,1.0),V(3.0,2.0,3.8),V(1.4,3.0,1.8)]},
+    l:{n:'Λ', pts:['A','B','C'], P:[V(4.8,1.0,1.2),V(2.4,3.6,3.8),V(1.2,1.8,2.0)]},
+    o:{n:'Ω', pts:['P','Q','R'], P:[V(4.2,2.8,3.2),V(2.6,0.8,3.2),V(1.6,3.8,3.2)]},
+    f:{n:'Φ', pts:['A','B','C'], P:[V(4.6,2.4,1.0),V(2.8,2.4,4.2),V(1.4,2.4,1.8)]},
+    p:{n:'Ψ', pts:['A','B','C'], P:[V(3.0,0.8,1.2),V(3.0,2.2,4.2),V(3.0,4.0,1.6)]},
+  };
+  const TEXT={
+    g:'Плоскость общего положения: не перпендикулярна ни одной плоскости проекций. Обе проекции треугольника — треугольники, и обе искажены (меньше по площади). Ни одна проекция не вырождается в линию.',
+    s:'Фронтально-проецирующая Σ ⟂ П₂: на П₂ вырождается в прямую Σ₂ — все точки плоскости проецируются на неё (собирательное свойство, как у цилиндра). Угол Σ₂ с осью x₁₂ — это угол α наклона Σ к П₁. На П₁ — искажённый треугольник.',
+    d:'Горизонтально-проецирующая Δ ⟂ П₁: на П₁ — прямая Δ₁, её угол с x₁₂ равен β (наклону к П₂). Так ведёт себя, например, вспомогательная плоскость Γ из задачи «прямая ∩ плоскость».',
+    l:'Профильно-проецирующая Λ ⟂ П₃ (содержит направление оси x): на П₁ и П₂ — искажённые треугольники, внешне как у плоскости общего положения. Узнать её можно по тому, что она содержит прямые, параллельные оси x₁₂ (их проекции ∥ x₁₂ на обеих картинах), или по профильной проекции, где она вырождается в прямую.',
+    o:'Горизонтальная плоскость уровня Ω ∥ П₁ (как на доске): все точки на одной высоте. Ω₂ — прямая, параллельная x₁₂, а Ω₁ — натуральная величина треугольника (н.в.). Плоскость уровня — частный случай проецирующей: Ω ∥ П₁ означает Ω ⟂ П₂ и Ω ⟂ П₃.',
+    f:'Фронтальная плоскость уровня Φ ∥ П₂: Φ₁ — прямая, параллельная x₁₂, а Φ₂ — натуральная величина.',
+    p:'Профильная плоскость уровня Ψ ∥ П₃: Ψ₁ и Ψ₂ — прямые, перпендикулярные x₁₂ и лежащие на одной линии связи. Натуральной величины на П₁ и П₂ нет.',
+  };
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.85));
+
+  const inkMats=[];
+  const lm=(color,dashed,op=1,ink=false)=>{const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.13,gapSize:0.09,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op}); if(ink) inkMats.push(m); return m;};
+  function dline(n,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new Array(n).fill(0).map(()=>new THREE.Vector3())),mat); l.frustumCulled=false; return l;}
+  function setLine(l,pts){const p=l.geometry.attributes.position; for(let i=0;i<p.count;i++){const v=pts[Math.min(i,pts.length-1)]; p.setXYZ(i,v.x,v.y,v.z);} p.needsUpdate=true; if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  const seg=(a,b,m)=>{const l=dline(2,m); setLine(l,[a,b]); return l;};
+  const dot=(c,s=0.08)=>new THREE.Mesh(new THREE.SphereGeometry(s,16,12),new THREE.MeshBasicMaterial({color:c,transparent:true}));
+  function label(text,color,scale=0.5){
+    const c=document.createElement('canvas'); c.width=384; c.height=128; const g=c.getContext('2d');
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*3,scale,1); s.renderOrder=20;
+    let last=''; s.setText=(t,col)=>{const k=t+col; if(k===last) return; last=k; g.clearRect(0,0,384,128); g.font='700 66px "PT Sans", Arial, sans-serif'; g.fillStyle=col; g.textAlign='center'; g.textBaseline='middle'; g.fillText(t,192,66); tex.needsUpdate=true;};
+    s.setText(text,color); return s;
+  }
+  function setTube(m,a,b){const d=new THREE.Vector3().subVectors(b,a); m.scale.set(1,Math.max(d.length(),1e-3),1); m.position.copy(a).addScaledVector(d,0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());}
+
+  let INK,P1C,P2C,P3C; const LC='#D2484F', OK='#2E8B57', PT='#B5651D';
+  const p1g=new THREE.Group(), p2g=new THREE.Group(), p3g=new THREE.Group(); scene.add(p1g); scene.add(p2g); scene.add(p3g);
+  const space=new THREE.Group(), links=new THREE.Group(); scene.add(space); scene.add(links);
+  const D={};
+  const pl=(w,h,c)=>new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.1,side:THREE.DoubleSide,depthWrite:false}));
+  const edges=(m,c)=>{const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.6})); e.position.copy(m.position); e.rotation.copy(m.rotation); return e;};
+  // локальные координаты проекций в своих плоскостях
+  const loc1=(p,e=0.02)=>new THREE.Vector3(-p.x,e,p.y), loc2=(p,e=0.02)=>new THREE.Vector3(-p.x,p.z,e), loc3=(p,e=0.02)=>new THREE.Vector3(e,p.z,p.y);
+  const W=p=>new THREE.Vector3(-p.x,p.z,p.y);
+
+  function build(){
+    INK=css('--ink'); P1C=css('--p1'); P2C=css('--p2'); P3C=css('--p3');
+    const p2=pl(SX,SZ,P2C); p2.position.set(-SX/2,SZ/2,0); p2g.add(p2); p2g.add(edges(p2,P2C));
+    const p1=pl(SX,SY,P1C); p1.rotation.x=-Math.PI/2; p1.position.set(-SX/2,0,SY/2); p1g.add(p1); p1g.add(edges(p1,P1C));
+    const p3=pl(SY,SZ,P3C); p3.rotation.y=Math.PI/2; p3.position.set(0,SZ/2,SY/2); p3g.add(p3); p3g.add(edges(p3,P3C));
+    const t=(s,c,p,g,sc=0.42)=>{const l=label(s,c,sc); l.position.copy(p); g.add(l); return l;};
+    t('Π₂',P2C,new THREE.Vector3(-SX+0.5,SZ-0.35,0.02),p2g,0.5); t('Π₁',P1C,new THREE.Vector3(-SX+0.5,0.02,SY-0.35),p1g,0.5);
+    p3g.visible=false;   // профильная плоскость не нужна: чертёж двухкартинный
+    scene.add(seg(new THREE.Vector3(-SX-0.3,0,0),new THREE.Vector3(0,0,0),lm(INK,false,1,true)));
+    p3g.add(seg(new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,SY+0.3),lm(INK,false,1,true)));
+    t('x₁₂',INK,new THREE.Vector3(-SX-0.7,-0.15,0),scene);
+
+    const triMesh=(c,op)=>{const g=new THREE.BufferGeometry().setFromPoints([0,0,0].map(()=>new THREE.Vector3())); g.setIndex([0,1,2]); const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false})); m.frustumCulled=false; return m;};
+    D.tri=triMesh(LC,0.3); space.add(D.tri); D.edge=dline(4,lm(LC,false,1)); space.add(D.edge);
+    D.lab=label('',LC,0.5); space.add(D.lab);
+    D.vd=[0,1,2].map(()=>{const m=dot(LC,0.075); space.add(m); const l=label('',LC,0.4); space.add(l); return {m,l};});
+    // проекции: треугольник (или вырожденный отрезок) + подписи вершин + название
+    D.pr={};
+    [['1',p1g,loc1],['2',p2g,loc2],['3',p3g,loc3]].forEach(([k,g,loc])=>{
+      const o={g,loc}; o.fill=triMesh(LC,0.18); g.add(o.fill); o.seg=dline(4,lm(LC,false,1)); g.add(o.seg);
+      o.lab=label('',LC,0.4); g.add(o.lab); o.tag=label('',OK,0.34); g.add(o.tag);
+      o.v=[0,1,2].map(()=>{const m=dot(LC,0.06); g.add(m); const l=label('',LC,0.34); g.add(l); return {m,l};});
+      D.pr[k]=o;
+    });
+    // проецирующие лучи из вершин
+    D.rays=[]; for(let i=0;i<9;i++){const l=dline(2,lm([P1C,P2C,P3C][i%3],true,0.5)); space.add(l); D.rays.push(l);}
+    // линии связи для трёх вершин
+    D.lk=[]; for(let i=0;i<3;i++){ const o={}; ['a','b','c','d','e','f'].forEach(k=>{o[k]=dline(2,lm(INK,false,0.45,true)); links.add(o[k]);}); o.arc=dline(25,lm(INK,true,0.5,true)); links.add(o.arc);
+      o.y1=new THREE.Object3D(); p1g.add(o.y1); o.y3=new THREE.Object3D(); p3g.add(o.y3); o.p1=new THREE.Object3D(); p1g.add(o.p1); o.p3=new THREE.Object3D(); p3g.add(o.p3); D.lk.push(o); }
+  }
+
+  const st={type:'g'};
+  const cur={th:-0.6,ph:1.1,r:18,t:[-1.6,1.8,1.8],fold:0}, tgt={...cur,t:[...cur.t]};
+  const sub3=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z), cr3=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x), nrm=a=>Math.hypot(a.x,a.y,a.z);
+  const area3=P=>nrm(cr3(sub3(P[1],P[0]),sub3(P[2],P[0])))/2;
+  const area2=(P,f)=>{const a=P.map(f); return Math.abs((a[1][0]-a[0][0])*(a[2][1]-a[0][1])-(a[1][1]-a[0][1])*(a[2][0]-a[0][0]))/2;};
+  const PJ={'1':p=>[p.x,p.y],'2':p=>[p.x,p.z],'3':p=>[p.y,p.z]};
+  const sub=['₁','₂','₃'];
+  const tmp=new THREE.Vector3();
+
+  function update(){
+    p1g.rotation.x=cur.fold*deg; p3g.rotation.y=cur.fold*deg; p1g.updateMatrixWorld(true); p3g.updateMatrixWorld(true);
+    const Pl=PLANES[st.type], P=Pl.P, n=Pl.n, S=area3(P);
+    const Wp=P.map(W);
+    const tp=D.tri.geometry.attributes.position; Wp.forEach((v,i)=>tp.setXYZ(i,v.x,v.y,v.z)); tp.needsUpdate=true; D.tri.geometry.computeBoundingSphere();
+    setLine(D.edge,[...Wp,Wp[0]]);
+    const c=Wp[0].clone().add(Wp[1]).add(Wp[2]).multiplyScalar(1/3); D.lab.setText(n,LC); D.lab.position.copy(c).add(new THREE.Vector3(0,0.3,0));
+    D.vd.forEach((o,i)=>{o.m.position.copy(Wp[i]); o.l.setText(Pl.pts[i],LC); o.l.position.copy(Wp[i]).add(new THREE.Vector3(0.25,0.25,0));});
+    for(const k in D.pr){
+      const o=D.pr[k], a=P.map(p=>o.loc(p,0.015)), ar=area2(P,PJ[k]), deg0=ar<1e-3, tv=Math.abs(ar-S)<1e-3;
+      const fp=o.fill.geometry.attributes.position; a.forEach((v,i)=>fp.setXYZ(i,v.x,v.y,v.z)); fp.needsUpdate=true; o.fill.geometry.computeBoundingSphere();
+      o.fill.visible=!deg0; o.fill.material.color.set(tv?OK:LC);
+      // вырожденная проекция: рисуем отрезок между крайними точками
+      if(deg0){ let best=[0,1],bd=-1; for(let i=0;i<3;i++)for(let j=i+1;j<3;j++){const d=a[i].distanceTo(a[j]); if(d>bd){bd=d;best=[i,j];}}
+        const A_=a[best[0]], B_=a[best[1]], dir=new THREE.Vector3().subVectors(B_,A_).normalize();
+        setLine(o.seg,[A_.clone().addScaledVector(dir,-0.6),B_.clone().addScaledVector(dir,0.6),B_.clone().addScaledVector(dir,0.6),B_.clone().addScaledVector(dir,0.6)]);
+        o.seg.material.color.set(PT); o.lab.setText(n+sub[k-1],PT); o.lab.position.copy(B_).addScaledVector(dir,0.6).add(k==='1'?new THREE.Vector3(0.3,0.02,0.25):k==='2'?new THREE.Vector3(0.3,0.25,0.02):new THREE.Vector3(0.02,0.25,0.35));
+      } else {
+        setLine(o.seg,[...a,a[0]]); o.seg.material.color.set(LC); o.lab.setText(n+sub[k-1],LC);
+        const cc=a[0].clone().add(a[1]).add(a[2]).multiplyScalar(1/3); o.lab.position.copy(cc).add(k==='1'?new THREE.Vector3(0,0.02,0.05):k==='2'?new THREE.Vector3(0,0.05,0.02):new THREE.Vector3(0.02,0.05,0));
+      }
+      o.tag.visible=tv&&!deg0; o.tag.setText('н.в.',OK);
+      const cc=a[0].clone().add(a[1]).add(a[2]).multiplyScalar(1/3); o.tag.position.copy(cc).add(k==='1'?new THREE.Vector3(0,0.02,0.4):k==='2'?new THREE.Vector3(0,-0.35,0.02):new THREE.Vector3(0.02,-0.35,0));
+      o.v.forEach((vv,i)=>{vv.m.position.copy(a[i]); vv.m.material.color.set(deg0?PT:LC); vv.l.setText(Pl.pts[i]+sub[k-1],deg0?PT:LC);
+        vv.l.position.copy(a[i]).add(k==='1'?new THREE.Vector3(-0.3,0.02,0.25):k==='2'?new THREE.Vector3(-0.3,0.25,0.02):new THREE.Vector3(0.02,0.25,0.3)); vv.l.visible=!deg0||i===0; });
+    }
+    const fade=Math.max(0,1-cur.fold/50);
+    P.forEach((p,i)=>{ const w=W(p); [D.pr['1'],D.pr['2'],D.pr['3']].forEach((o,j)=>{ tmp.copy(o.loc(p,0.02)).applyMatrix4(o.g.matrixWorld); setLine(D.rays[i*3+j],[w,tmp]); D.rays[i*3+j].material.opacity=0.5*fade; D.rays[i*3+j].visible=j<2; }); });
+    P.forEach((p,i)=>{
+      const o=D.lk[i]; o.p1.position.copy(loc1(p)); o.p3.position.copy(loc3(p)); o.y1.position.set(0,0.02,p.y); o.y3.position.set(0.02,0,p.y);
+      const w1=o.p1.getWorldPosition(new THREE.Vector3()), w3=o.p3.getWorldPosition(new THREE.Vector3()), w2=loc2(p);
+      const y1=o.y1.getWorldPosition(new THREE.Vector3()), y3=o.y3.getWorldPosition(new THREE.Vector3());
+      const ax=new THREE.Vector3(-p.x,0,0), az=new THREE.Vector3(0,p.z,0);
+      setLine(o.a,[w2,ax]); setLine(o.b,[ax,w1]); [o.c,o.d,o.e,o.f,o.arc].forEach(q=>q.visible=false);
+      const r=y1.length(), ang=y1.angleTo(y3), nn=new THREE.Vector3().crossVectors(y1,y3), pts=[];
+      if(ang<1e-3||nn.lengthSq()<1e-9) for(let k=0;k<=24;k++) pts.push(y1.clone());
+      else { nn.normalize(); const an=y1.clone().normalize(); for(let k=0;k<=24;k++) pts.push(an.clone().applyAxisAngle(nn,ang*k/24).multiplyScalar(r)); }
+      setLine(o.arc,pts);
+    });
+  }
+  function calc(){
+    const Pl=PLANES[st.type], P=Pl.P, n=Pl.n, S=area3(P);
+    const f=k=>{const a=area2(P,PJ[k]); if(a<1e-3) return '<span class="tag-pt">прямая</span>'; if(Math.abs(a-S)<1e-3) return `<span class="tag-ok">${a.toFixed(2)} н.в.</span>`; return a.toFixed(2);};
+    const N=cr3(sub3(P[1],P[0]),sub3(P[2],P[0])), L=nrm(N);
+    const ang=c=>(Math.acos(Math.min(1,Math.abs(c)/L))/deg).toFixed(0);
+    return `Площадь треугольника: ${S.toFixed(2)} &nbsp;·&nbsp; на П₁: ${f('1')} &nbsp;·&nbsp; на П₂: ${f('2')}<br>`+
+      `Наклон ${n} к П₁: ${ang(N.z)}°, к П₂: ${ang(N.y)}°`;
+  }
+
+  const VIEWS={iso:{th:-0.6,ph:1.1,r:18,t:[-1.6,1.8,1.8]}, front:{th:0,ph:Math.PI/2,r:21,t:[0,0,0]}, side:{th:-Math.PI/2,ph:Math.PI/2,r:15,t:[0,2.4,2.4]}, top:{th:0,ph:0.001,r:15,t:[-2.4,0,2.4]}};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); if(cur.ph<0.01) camera.up.set(0,0,-1); camera.lookAt(...cur.t);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI-0.05,Math.max(0.001,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(45,Math.max(6,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(45,Math.max(6,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  function resize(){const s=document.getElementById('stage');renderer.setSize(s.clientWidth,s.clientHeight,false);camera.aspect=s.clientWidth/s.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    build();
+    const T=id=>document.getElementById(id);
+    const setFold=v=>{tgt.fold=v; T('fold').value=v; T('foldV').textContent=v+'°';};
+    function goView(n){const v=VIEWS[n]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t]; while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; markView(n);
+      if(n==='front') setFold(90); else if(cur.fold>1 || tgt.fold>1) setFold(0); }
+    document.querySelectorAll('#views button').forEach(b=>{ if(b.dataset.view==='front') b.textContent='Эпюр'; b.addEventListener('click',()=>goView(b.dataset.view)); });
+    const ui=()=>{
+      document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.step===st.type)));
+      T('text').textContent=TEXT[st.type]; T('calc').innerHTML=calc();
+      links.visible=T('tLink').checked; space.visible=T('tSpace').checked;
+    };
+    document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{st.type=b.dataset.step; ui();}));
+    T('fold').addEventListener('input',()=>setFold(+T('fold').value));
+    ['tLink','tSpace'].forEach(id=>T(id).addEventListener('change',ui));
+    ui();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k=reduce?1:0.1;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k;
+      const df=tgt.fold-cur.fold; cur.fold += reduce ? df : Math.sign(df)*Math.min(Math.abs(df),1.2);
+      update(); placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>
