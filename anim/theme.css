@@ -1,0 +1,51 @@
+/* Общий стиль страниц анимаций — в тон каталогу: светлый фон, белая панель, антиква, скруглённые кнопки.
+   Подключается после встроенного <style> страницы и переопределяет его. Цвета плоскостей П₁/П₂/П₃ не трогаем. */
+:root{
+  --paper:#F5F6F8; --panel:#FFFFFF; --ink:#16191D; --muted:#5E6672; --rule:#E2E5EA;
+  --btn:#2F6BD8; --btn-ink:#FFFFFF; --btn-soft:#E8EFFC;
+  --ui-font:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --ui-mono:"PT Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#111317; --panel:#1A1D22; --ink:#E8EAED; --muted:#9AA3AE; --rule:#2A2F36; --btn:#7AA7F0; --btn-ink:#0F1520; --btn-soft:#1E2A3D; }
+}
+:root[data-theme="dark"]{ --paper:#111317; --panel:#1A1D22; --ink:#E8EAED; --muted:#9AA3AE; --rule:#2A2F36; --btn:#7AA7F0; --btn-ink:#0F1520; --btn-soft:#1E2A3D; }
+
+body{font-family:var(--ui-font);font-size:16px;line-height:1.5}
+header{padding:16px 16px 6px;padding-right:calc(130px + env(safe-area-inset-right,0px))}
+h1{font-family:var(--ui-font);font-weight:600;font-size:1.5rem;letter-spacing:-.005em;line-height:1.15}
+header p{font-size:.95rem}
+.hint{font-family:var(--ui-mono);font-size:12px}
+
+/* нижняя панель управления */
+.panel{border-top:1px solid var(--rule);border-radius:18px 18px 0 0;box-shadow:0 -8px 24px -16px rgba(22,25,29,.25);padding:14px 16px 16px}
+
+/* кнопки: овальные «таблетки», выбранная — синяя */
+button{font-family:var(--ui-font);font-size:.92rem;border-radius:999px;padding:7px 14px;min-height:36px;transition:background-color .2s,border-color .2s,color .2s}
+button:hover{border-color:var(--btn)}
+button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+.steps button,.steps button[aria-pressed="true"]{border-style:solid}
+.steps button[aria-pressed="false"]{background:var(--btn-soft);border-color:transparent}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--btn);outline-offset:2px}
+
+/* пояснение к шагу и блок расчётов */
+#stepText,#text{border-left-color:var(--btn)!important;font-size:.95rem;line-height:1.55}
+#calc{border:0;border-radius:12px;background:var(--paper);font-family:var(--ui-font)}
+details{border-top-color:var(--rule)}
+
+/* подписи ползунков и переключателей */
+.slider label,.fold label,.toggles label{font-size:.92rem}
+input[type="range"]{accent-color:var(--btn)}
+
+/* кнопка возврата в каталог */
+.cat-back{background:var(--panel)!important;color:var(--btn)!important;border:1px solid var(--rule)!important;border-radius:999px!important;
+  font-family:var(--ui-font)!important;font-weight:600!important;box-shadow:0 4px 14px -8px rgba(22,25,29,.35)}
+.cat-back:hover{border-color:var(--btn)!important}
+
+/* телефон: компактная шапка, больше места модели */
+@media (max-width:560px){
+  header{padding:12px 16px 4px;padding-right:calc(118px + env(safe-area-inset-right,0px))}
+  h1{font-size:1.2rem}
+  header p{font-size:.85rem}
+  .hint{display:none}
+}
