@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Flxshhh">
+<meta name="copyright" content="© 2026 Flxshhh. Все права защищены.">
+<!-- © 2026 Flxshhh (github.com/Flxshhh). Все права защищены. Копирование без разрешения автора запрещено. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Способ замены плоскостей проекций</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=PT+Sans+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDF1; --panel:#F7F9FB; --ink:#1E2A38; --muted:#5A6878; --rule:#C9D2DB;
+  --p2:#3B7BC4; --p1:#3E9A64;
+  color-scheme: light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+}
+:root[data-theme="dark"]{ --paper:#141B23; --panel:#1C2530; --ink:#DCE4EC; --muted:#93A1B0; --rule:#334150; --p2:#6AA3E3; --p1:#62BF88; color-scheme: dark; }
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:"PT Sans","Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{padding:12px 16px 4px}
+h1{font-family:"PT Sans Narrow","PT Sans",Arial,sans-serif;font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+#stage{position:relative;flex:1;min-height:200px}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.hint{position:absolute;left:16px;top:6px;font-size:.8rem;color:var(--muted);pointer-events:none}
+.panel{background:var(--panel);border-top:1px solid var(--rule);padding:12px 16px 14px;max-height:48vh;overflow:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+button{font:inherit;font-size:.92rem;color:var(--ink);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--panel)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--p2);outline-offset:2px}
+.steps button{border-style:dashed}
+.steps button[aria-pressed="true"]{border-style:solid}
+.fold{display:flex;align-items:center;gap:10px;width:100%}
+.fold label{font-size:.92rem;white-space:nowrap}
+.fold input{flex:1;accent-color:var(--p1)}
+.toggles label{font-size:.9rem;display:flex;gap:6px;align-items:center;margin-right:10px}
+#calc{font-size:.92rem;line-height:1.6;margin:0 0 10px;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-variant-numeric:tabular-nums}
+
+.grp-label{font-size:.8rem;color:var(--muted);min-width:4.5em}
+#task{font-size:.92rem;line-height:1.5;margin:0 0 10px;padding:8px 10px;border:1px dashed var(--accent,#D2484F);border-radius:6px;max-width:72ch}
+
+#stepText{font-size:.92rem;line-height:1.5;max-width:70ch;margin:0;border-left:3px solid var(--p2);padding-left:10px}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=PT+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="../icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="theme-color" content="#2F6BD8">
+</head>
+<body>
+<a class="cat-back" href="../index.html" onclick="try{if(document.referrer&&new URL(document.referrer).pathname.replace(/index\.html$/,'')===new URL('../',location.href).pathname){history.back();return false}}catch(e){}" style="position:fixed;z-index:50;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));font:600 14px/1 'PT Sans',Arial,sans-serif;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;border-radius:6px;background:rgba(30,42,56,.86);color:#fff;text-decoration:none">← Каталог</a>
+<header>
+  <h1>Способ замены плоскостей проекций</h1>
+  <p>Новые плоскости П₄ и П₅: натуральная величина отрезка и плоскости</p>
+</header>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="hint">Вращайте пальцем или мышью, масштаб — колесом или щипком</div>
+</div>
+<div class="panel">
+  <div class="row" id="modes">
+    <span class="grp-label">Задача:</span>
+    <button data-mode="seg" aria-pressed="true">Отрезок AB</button>
+    <button data-mode="tri" aria-pressed="false">Плоскость ABC</button>
+  </div>
+  <div id="task"></div>
+  <div class="row steps" id="steps">
+    <button data-step="1" aria-pressed="true">1. Дано</button>
+    <button data-step="2" aria-pressed="false">2. П₂ → П₄</button>
+    <button data-step="3" aria-pressed="false">3. П₁ → П₅</button>
+    <button data-step="4" aria-pressed="false">4. Эпюр</button>
+  </div>
+  <p id="stepText"></p>
+  <div id="calc"></div>
+  <div class="row fold">
+    <label for="unf">Развёртка: <span id="unfV">0%</span></label>
+    <input id="unf" type="range" min="0" max="100" value="0">
+  </div>
+  <div class="row" id="views">
+    <button data-view="iso" aria-pressed="true">Пространство</button>
+    <button data-view="top" aria-pressed="false">Сверху (эпюр)</button>
+  </div>
+  <div class="row toggles">
+    <label><input type="checkbox" id="tSpace" checked> Объекты в пространстве</label>
+    <label><input type="checkbox" id="tLink" checked> Линии связи</label>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  // Вся геометрия — в координатах three.js: X = x, Y = z (вверх), Z = y (к наблюдателю).
+  // П₁: Y = 0, П₂: Z = 0.
+  const deg=Math.PI/180, UP=new THREE.Vector3(0,1,0);
+  const T=(x,y,z)=>new THREE.Vector3(x,z,y);          // из Монжа (x, y, z)
+  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // ---------- исходные данные ----------
+  const TASKS={
+    seg:{ pts:{A:T(-1.2,2.2,0.65), B:T(1.2,0.65,1.5)} },
+    tri:{ pts:{A:T(-1.3,0.5,1.1), B:T(0.0,3.0,0.15), C:T(1.25,1.6,1.9)} },
+  };
+
+  // ---------- построение новых систем плоскостей ----------
+  function solve(kind){
+    const P=TASKS[kind].pts, names=Object.keys(P), R={kind,P,names};
+    const pr1=p=>new THREE.Vector3(p.x,0,p.z);
+    let O4,X4,Z4;   // ось x₁₄: точка O4 и направление X4 в П₁; Z4 — «от объекта»
+    if(kind==='seg'){
+      const a1=pr1(P.A), b1=pr1(P.B), dir=b1.clone().sub(a1).normalize();
+      let perp=new THREE.Vector3(-dir.z,0,dir.x); if(perp.z<0) perp.negate();   // в сторону большего y
+      O4=a1.clone().addScaledVector(perp,1.0); X4=dir.clone(); Z4=perp.clone();     // объект — с противоположной стороны
+    } else {
+      // горизонталь h через A: точка 1 на BC на высоте A
+      const t=(P.B.y-P.A.y)/(P.B.y-P.C.y); R.H1=P.B.clone().lerp(P.C,t);
+      const hd=pr1(R.H1).sub(pr1(P.A)).normalize();
+      const far=Math.max(...names.map(n=>pr1(P[n]).sub(pr1(P.A)).dot(hd)));
+      O4=pr1(P.A).addScaledVector(hd,far+0.9); Z4=hd.clone();                    // x₁₄ ⟂ h₁, за треугольником
+      X4=new THREE.Vector3().crossVectors(UP,Z4).normalize();
+    }
+    X4=new THREE.Vector3().crossVectors(UP,Z4).normalize();                        // правая тройка X4, Y=UP, Z4
+    R.O4=O4; R.B4=new THREE.Matrix4().makeBasis(X4,UP,Z4);
+    const toL4=p=>{const d=p.clone().sub(O4); return new THREE.Vector3(d.dot(X4),d.dot(UP),d.dot(Z4));};
+    R.toL4=toL4;
+    // проекции на П₄ (локальные: Z = 0)
+    R.p4={}; names.forEach(n=>{const l=toL4(P[n]); R.p4[n]=new THREE.Vector3(l.x,l.y,0);});
+    // ось x₄₅ в П₄ (локально, Z = 0): точка O5, направление u5; Z5 — в П₄ «от проекций»
+    let O5,u5,Z5;
+    if(kind==='seg'){
+      const a4=R.p4.A, b4=R.p4.B, dir=b4.clone().sub(a4).normalize();
+      O5=b4.clone().addScaledVector(dir,0.9); u5=new THREE.Vector3(-dir.y,dir.x,0); Z5=dir.clone();
+    } else {
+      const a4=R.p4.A, c4=R.p4.C, dir=c4.clone().sub(a4).normalize();
+      let perp=new THREE.Vector3(-dir.y,dir.x,0); if(perp.x<0) perp.negate();
+      O5=a4.clone().addScaledVector(perp,0.9); u5=dir.clone(); Z5=perp.clone();
+    }
+    const Y5=new THREE.Vector3(0,0,-1);                                             // к объекту (по нормали П₄)
+    const X5=new THREE.Vector3().crossVectors(Y5,Z5).normalize();
+    R.O5=O5; R.X5=X5; R.B5=new THREE.Matrix4().makeBasis(X5,Y5,Z5);
+    R.p5={}; names.forEach(n=>{ const l=toL4(P[n]).sub(O5); R.p5[n]=new THREE.Vector3(l.dot(X5),l.dot(Y5),0); });
+    // ноги перпендикуляров на осях (для линий связи)
+    R.f45={}; names.forEach(n=>{ const q=R.p4[n].clone().sub(O5); R.f45[n]=O5.clone().addScaledVector(X5,q.dot(X5)); });
+    R.f14={}; names.forEach(n=>{ const q=pr1(P[n]).sub(O4); R.f14[n]=O4.clone().addScaledVector(X4,q.dot(X4)); });
+    R.X4=X4; R.Z4=Z4;
+    return R;
+  }
+
+  // ---------- three.js ----------
+  const canvas=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.9));
+  const inkMats=[];
+  const lm=(color,dashed,op=1,ink=false)=>{const m=dashed?new THREE.LineDashedMaterial({color,dashSize:0.12,gapSize:0.08,transparent:true,opacity:op}):new THREE.LineBasicMaterial({color,transparent:true,opacity:op}); if(ink) inkMats.push(m); return m;};
+  function dline(n,mat){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(new Array(n).fill(0).map(()=>new THREE.Vector3())),mat); l.frustumCulled=false; return l;}
+  function setLine(l,pts){const p=l.geometry.attributes.position; for(let i=0;i<p.count;i++){const v=pts[Math.min(i,pts.length-1)]; p.setXYZ(i,v.x,v.y,v.z);} p.needsUpdate=true; if(l.material.isLineDashedMaterial) l.computeLineDistances();}
+  const seg=(a,b,m)=>{const l=dline(2,m); setLine(l,[a,b]); return l;};
+  const poly=(pts,m)=>{const l=dline(pts.length,m); setLine(l,pts); return l;};
+  const dot=(c,s=0.07)=>new THREE.Mesh(new THREE.SphereGeometry(s,16,12),new THREE.MeshBasicMaterial({color:c}));
+  function label(text,color,scale=0.4){
+    const c=document.createElement('canvas'); c.width=384; c.height=128; const g=c.getContext('2d');
+    g.font='700 66px "PT Sans", Arial, sans-serif'; g.fillStyle=color; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,192,66);
+    const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true})); s.scale.set(scale*3,scale,1); s.renderOrder=20; return s;
+  }
+  function rect(w0,w1,h0,h1,color,op){ // прямоугольник в локальной плоскости XY
+    const g=new THREE.Group();
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(w1-w0,h1-h0),new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false}));
+    m.position.set((w0+w1)/2,(h0+h1)/2,0); g.add(m);
+    g.add(poly([new THREE.Vector3(w0,h0,0),new THREE.Vector3(w1,h0,0),new THREE.Vector3(w1,h1,0),new THREE.Vector3(w0,h1,0),new THREE.Vector3(w0,h0,0)],lm(color,false,0.7)));
+    return g;
+  }
+  function triFill(pts,color,op){const g=new THREE.BufferGeometry().setFromPoints(pts); g.setIndex([0,1,2]); return new THREE.Mesh(g,new THREE.MeshBasicMaterial({color,transparent:true,opacity:op,side:THREE.DoubleSide,depthWrite:false}));}
+
+  let INK,P1C,P2C; const P4C='#B5651D', P5C='#8A5CC8', OBJ='#D2484F', HC='#2E8B57', NV='#2E8B57';
+  let root=null, R=null, D=null;
+
+  function build(kind){
+    if(root){ scene.remove(root); root.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material){ if(o.material.map) o.material.map.dispose(); const i=inkMats.indexOf(o.material); if(i>=0) inkMats.splice(i,1); o.material.dispose(); } }); }
+    INK=css('--ink'); P1C=css('--p1'); P2C=css('--p2');
+    R=solve(kind); root=new THREE.Group(); scene.add(root); D={pts:{}};
+    const P=R.P, names=R.names, tri=kind==='tri';
+    // группы: П₁ (мир), П₂ (вращается вокруг x₁₂), П₄ (база + поворот), П₅ (внутри П₄)
+    const g1=new THREE.Group(); root.add(g1);
+    const g2=new THREE.Group(); root.add(g2);
+    const g4b=new THREE.Group(); g4b.position.copy(R.O4); g4b.quaternion.setFromRotationMatrix(R.B4); root.add(g4b);
+    const g4=new THREE.Group(); g4b.add(g4);
+    const g5b=new THREE.Group(); g5b.position.copy(R.O5); g5b.quaternion.setFromRotationMatrix(R.B5); g4.add(g5b);
+    const g5=new THREE.Group(); g5b.add(g5);
+    const sp=new THREE.Group(); root.add(sp); const lk=new THREE.Group(); root.add(lk); const rays=new THREE.Group(); root.add(rays);
+    Object.assign(D,{g1,g2,g4b,g4,g5b,g5,sp,lk,rays});
+
+    // плоскости (размеры по содержимому)
+    const all1=names.map(n=>new THREE.Vector3(P[n].x,0,P[n].z));
+    const xs=all1.map(v=>v.x), zs=all1.map(v=>v.z);
+    const p1=rect(Math.min(...xs,R.O4.x)-1.5,Math.max(...xs,R.O4.x)+1.5, -0.2, Math.max(...zs,R.O4.z)+1.3,P1C,0.08);
+    p1.rotation.x=Math.PI/2; g1.add(p1);   // локальная Y → +Z мира (глубина y)
+    const lp1=label('Π₁',P1C,0.45); lp1.position.set(Math.min(...xs)-1.1,0.02,Math.max(...zs,R.O4.z)+0.9); g1.add(lp1);
+    const ys=names.map(n=>P[n].y);
+    const p2=rect(Math.min(...xs)-1.5,Math.max(...xs)+1.5,0,Math.max(...ys)+1.0,P2C,0.08); g2.add(p2);
+    const lp2=label('Π₂',P2C,0.45); lp2.position.set(Math.min(...xs)-1.1,Math.max(...ys)+0.7,0.02); g2.add(lp2);
+    const l4x=names.map(n=>R.p4[n].x), l4y=names.map(n=>R.p4[n].y), l4ox=[R.O5.x];
+    const pl4=rect(Math.min(...l4x,...l4ox)-1.2,Math.max(...l4x,...l4ox)+1.2,0,Math.max(...l4y,R.O5.y)+1.0,P4C,0.1); g4.add(pl4); D.pl4=pl4;
+    const lp4=label('Π₄',P4C,0.45); lp4.position.set(Math.min(...l4x)-0.8,Math.max(...l4y)+0.6,0.02); g4.add(lp4);
+    const l5x=names.map(n=>R.p5[n].x), l5y=names.map(n=>R.p5[n].y);
+    const pl5=rect(Math.min(...l5x,0)-1.0,Math.max(...l5x,0)+1.0,0,Math.max(...l5y)+0.9,P5C,0.1); g5.add(pl5); D.pl5=pl5;
+    const lp5=label('Π₅',P5C,0.45); lp5.position.set(Math.max(...l5x,0)+0.6,Math.max(...l5y)+0.5,0.02); g5.add(lp5);
+    // оси
+    root.add(seg(new THREE.Vector3(Math.min(...xs)-1.5,0,0),new THREE.Vector3(Math.max(...xs)+1.5,0,0),lm(INK,false,1,true)));
+    const lx12=label('x₁₂',INK,0.36); lx12.position.set(Math.min(...xs)-1.8,0,0); root.add(lx12);
+    const half4=(Math.max(...l4x,...l4ox)-Math.min(...l4x,...l4ox))/2+1.2, mid4=(Math.max(...l4x,...l4ox)+Math.min(...l4x,...l4ox))/2;
+    D.ax14=seg(new THREE.Vector3(mid4-half4,0,0),new THREE.Vector3(mid4+half4,0,0),lm(INK,false,1,true)); g4b.add(D.ax14);
+    D.lx14=label('x₁₄',INK,0.36); D.lx14.position.set(mid4+half4+0.35,0,0); g4b.add(D.lx14);
+    const span5=Math.max(...l5x.map(Math.abs))+1.0;
+    D.ax45=seg(R.O5.clone().addScaledVector(R.X5,-span5),R.O5.clone().addScaledVector(R.X5,span5),lm(INK,false,1,true)); g4.add(D.ax45);
+    D.lx45=label('x₄₅',INK,0.36); D.lx45.position.copy(R.O5).addScaledVector(R.X5,span5+0.35); g4.add(D.lx45);
+
+    // объект в пространстве
+    const W=names.map(n=>P[n]);
+    if(tri){ sp.add(triFill(W,'#7d97b3',0.35)); sp.add(poly([...W,W[0]],lm(OBJ,false,1))); }
+    else sp.add(poly(W,lm(OBJ,false,1)));
+    // проекции: на П₁ (мир), П₂, П₄, П₅
+    const loc2=p=>new THREE.Vector3(p.x,p.y,0.015), loc1=p=>new THREE.Vector3(p.x,0.015,p.z);
+    const shape=(arr,g,closed,col)=>{ g.add(poly(closed?[...arr,arr[0]]:arr,lm(col,false,1))); };
+    shape(names.map(n=>loc1(P[n])),g1,tri,OBJ); shape(names.map(n=>loc2(P[n])),g2,tri,OBJ);
+    shape(names.map(n=>R.p4[n].clone().setZ(0.015)),g4,tri,OBJ);
+    shape(names.map(n=>R.p5[n].clone().setZ(0.015)),g5,tri,NV);
+    if(tri){ g5.add(triFill(names.map(n=>R.p5[n].clone().setZ(0.01)),NV,0.22)); }
+    else { const a=R.p4.A, b=R.p4.B; g4.add(poly([a.clone().setZ(0.02),b.clone().setZ(0.02)],lm(NV,false,1))); }
+    // горизонталь h (только для треугольника)
+    if(tri){
+      const A=P.A, H=R.H1;
+      sp.add(seg(A,H,lm(HC,false,1)));
+      g1.add(seg(loc1(A),loc1(H),lm(HC,false,1))); g2.add(seg(loc2(A),loc2(H),lm(HC,false,1)));
+      const lh1=label('h₁',HC,0.34); lh1.position.copy(loc1(H)).add(new THREE.Vector3(0.3,0.02,0.2)); g1.add(lh1);
+      const lh2=label('h₂ ∥ x₁₂',HC,0.32); lh2.position.copy(loc2(H)).add(new THREE.Vector3(0.6,0.18,0)); g2.add(lh2);
+      // угол α на П₄ между проекцией плоскости и осью x₁₄
+      const a=R.p4.A, c=R.p4.C, dir=c.clone().sub(a).normalize(); if(dir.y<0) dir.negate();
+      const t0=-a.y/dir.y, I=a.clone().addScaledVector(dir,t0);
+      const ray=new THREE.Vector3(Math.sign(dir.x)||1,0,0), ang=Math.acos(Math.abs(dir.x));
+      const arcPts=[]; for(let i=0;i<=20;i++){const t=ang*i/20; const v=ray.clone().multiplyScalar(Math.cos(t)).add(new THREE.Vector3(0,1,0).multiplyScalar(Math.sin(t))); arcPts.push(I.clone().addScaledVector(v,0.6).setZ(0.02));}
+      g4.add(poly(arcPts,lm(HC,false,1)));
+      g4.add(poly([I.clone().setZ(0.02),a.clone().setZ(0.02)],lm(OBJ,true,0.7)));
+      const la=label('α',HC,0.4); la.position.copy(I).addScaledVector(ray,0.95).add(new THREE.Vector3(0,0.3,0.03)); g4.add(la);
+      R.alpha=ang/deg;
+    }
+    // точки и подписи
+    const sub={1:'₁',2:'₂',4:'₄',5:'₅'};
+    names.forEach(n=>{
+      const o={}; D.pts[n]=o; const p=P[n];
+      o.w=p; const m=dot(OBJ,0.085); m.position.copy(p); sp.add(m);
+      const l=label(n,OBJ,0.42); l.position.copy(p).add(new THREE.Vector3(0.25,0.25,0)); sp.add(l);
+      const mk=(g,v,name,col=OBJ)=>{ const d=dot(col,0.065); d.position.copy(v); g.add(d); if(name){const t=label(name,col,0.34); t.position.copy(v).add(new THREE.Vector3(0.28,0.22,0.03)); g.add(t);} return d; };
+      o.m1=mk(g1,loc1(p),null); { const t=label(n+'₁',OBJ,0.34); t.position.copy(loc1(p)).add(new THREE.Vector3(-0.3,0.03,0.2)); g1.add(t); }
+      o.m2=mk(g2,loc2(p),n+'₂');
+      let n4=n+'₄', n5=n+'₅';
+      if(!tri && n==='B') n5=null; if(!tri && n==='A') n5='A₅ ≡ B₅';
+      if(tri && n==='A') n4='A₄ ≡ h₄';
+      o.m4=mk(g4,R.p4[n].clone().setZ(0.025),n4);
+      o.m5=mk(g5,R.p5[n].clone().setZ(0.025),n5,NV);
+      // маркеры на осях (для линий связи)
+      o.f12=new THREE.Vector3(p.x,0,0);
+      o.f14=R.f14[n].clone();
+      o.f45m=new THREE.Object3D(); o.f45m.position.copy(R.f45[n]); g4.add(o.f45m);
+      // линии связи (мир, обновляются каждый кадр)
+      o.L=[]; const cols=[P2C,P1C,P2C,P1C,P1C,P1C]; // A₂–x₁₂ (z), x₁₂–A₁ (y), x₁₄–A₄ (z), A₁–x₁₄ (d), x₄₅–A₅ (d), A₄–x₄₅
+      ['k12a','k12b','k14a','k14b','k45a','k45b'].forEach((key,i)=>{ const col = key==='k12a'||key==='k14a' ? P2C : key==='k14b'||key==='k45a' ? P5C : INK;
+        const line=dline(2,lm(col,false,key==='k12b'||key==='k45b'?0.45:0.9,col===INK)); lk.add(line); o[key]=line; });
+      o.r1=dline(2,lm(P1C,true,0.55)); o.r2=dline(2,lm(P2C,true,0.55)); o.r4=dline(2,lm(P4C,true,0.6)); o.r5=dline(2,lm(P5C,true,0.6));
+      [o.r1,o.r2,o.r4,o.r5].forEach(r=>rays.add(r));
+    });
+  }
+
+  const ease=x=>x<0?0:x>1?1:x*x*(3-2*x);
+  const tmp={a:new THREE.Vector3(),b:new THREE.Vector3(),c:new THREE.Vector3(),d:new THREE.Vector3(),e:new THREE.Vector3()};
+  function update(u,step){
+    const th5=ease(u/0.34)*Math.PI/2, th4=ease((u-0.33)/0.34)*Math.PI/2, th2=ease((u-0.66)/0.34)*Math.PI/2;
+    D.g5.rotation.x=th5; D.g4.rotation.x=th4; D.g2.rotation.x=-th2;
+    root.updateMatrixWorld(true);
+    const fade=Math.max(0,1-u*3);
+    D.g4b.visible=step>=2; D.g5b.visible=step>=3;
+    for(const n in D.pts){ const o=D.pts[n];
+      const w1=o.m1.getWorldPosition(tmp.a), w2=o.m2.getWorldPosition(tmp.b), w4=o.m4.getWorldPosition(tmp.c), w5=o.m5.getWorldPosition(tmp.d), f45=o.f45m.getWorldPosition(tmp.e);
+      setLine(o.k12a,[w2,o.f12]); setLine(o.k12b,[o.f12,w1]);
+      setLine(o.k14a,[o.f14,w4]); setLine(o.k14b,[w1,o.f14]);
+      setLine(o.k45a,[f45,w5]); setLine(o.k45b,[w4,f45]);
+      o.k14a.visible=o.k14b.visible=step>=2; o.k45a.visible=o.k45b.visible=step>=3;
+      setLine(o.r1,[o.w,w1]); setLine(o.r2,[o.w,w2]); setLine(o.r4,[o.w,w4]); setLine(o.r5,[o.w,w5]);
+      [o.r1,o.r2,o.r4,o.r5].forEach(r=>r.material.opacity=0.6*fade);
+      o.r4.visible=step>=2; o.r5.visible=step>=3;
+    }
+  }
+
+  const TEXT={
+    seg:{
+      task:'<b>Задача.</b> Дано: отрезок AB общего положения. Найти его натуральную величину и преобразовать прямую в проецирующую.<br><b>План:</b> 1) П₂ → П₄, x₁₄ ∥ A₁B₁ (AB ∥ П₄); 2) П₁ → П₅, x₄₅ ⟂ A₄B₄ (AB ⟂ П₅).',
+      1:'Дано: отрезок AB в системе П₂/П₁. Ни одна проекция не даёт натуральной величины — AB наклонён к обеим плоскостям.',
+      2:'Первая замена П₂ → П₄ (П₁ остаётся). Новую плоскость П₄ ставим ⟂ П₁ и параллельно AB, поэтому ось x₁₄ ∥ A₁B₁. Высоты точек не меняются, так как П₁ сохранилась: |A₄x₁₄| = |A₂x₁₂| = z (синие отрезки — на доске это крестики). A₄B₄ — натуральная величина AB, а её угол с x₁₄ — угол α наклона AB к П₁.',
+      3:'Вторая замена П₁ → П₅ (П₄ остаётся). П₅ ⟂ П₄ ставим перпендикулярно AB: ось x₄₅ ⟂ A₄B₄. Теперь сохраняется расстояние до П₄: |A₅x₄₅| = |A₁x₁₄| (фиолетовые отрезки — штрихи на доске). AB ⟂ П₅, поэтому проецируется в точку A₅ ≡ B₅ — прямая стала проецирующей.',
+      4:'Развёртка: П₅ поворачивается вокруг x₄₅ в плоскость П₄, затем П₄ — вокруг x₁₄ в плоскость П₁, и П₂ — вокруг x₁₂. Получается эпюр как на доске: каждая новая проекция лежит на линии связи, перпендикулярной своей оси.',
+    },
+    tri:{
+      task:'<b>Задача.</b> Дано: плоскость ABC общего положения. Найти натуральную величину треугольника и угол α наклона к П₁.<br><b>План:</b> 1) h ⊂ ABC; 2) П₂ → П₄, x₁₄ ⟂ h₁ (ABC ⟂ П₄); 3) П₁ → П₅, x₄₅ ∥ A₄B₄C₄ (ABC ∥ П₅).',
+      1:'Дано: плоскость ABC общего положения. Сначала строим в ней горизонталь h (h₂ ∥ x₁₂) — по ней выберем направление новой оси.',
+      2:'Первая замена П₂ → П₄: x₁₄ ⟂ h₁. Тогда П₄ ⟂ h, а плоскость, содержащая перпендикуляр к П₄, сама ей перпендикулярна: ABC ⟂ П₄. Треугольник проецируется в прямую, горизонталь — в точку (A₄ ≡ h₄). Угол этой прямой с x₁₄ — угол α наклона ABC к П₁. Высоты сохраняются: |A₄x₁₄| = |A₂x₁₂|.',
+      3:'Вторая замена П₁ → П₅: x₄₅ ∥ A₄B₄C₄. Тогда П₅ ∥ ABC, и A₅B₅C₅ — натуральная величина треугольника. Сохраняются расстояния до П₄: |A₅x₄₅| = |A₁x₁₄|.',
+      4:'Развёртка: П₅ → в плоскость П₄ вокруг x₄₅, П₄ → в плоскость П₁ вокруг x₁₄, П₂ → вокруг x₁₂. Получается эпюр с доски.',
+    },
+  };
+  function calc(kind){
+    const P=R.P;
+    if(kind==='seg'){ const ab=P.A.distanceTo(P.B), a4b4=R.p4.A.distanceTo(R.p4.B), a5b5=R.p5.A.distanceTo(R.p5.B);
+      return `|AB| = ${ab.toFixed(2)} &nbsp;·&nbsp; |A₁B₁| = ${Math.hypot(P.A.x-P.B.x,P.A.z-P.B.z).toFixed(2)} &nbsp;·&nbsp; |A₄B₄| = <b style="color:${NV}">${a4b4.toFixed(2)} (н.в.)</b> &nbsp;·&nbsp; |A₅B₅| = ${a5b5.toFixed(3)} (точка)`; }
+    const area=(a,b,c)=>new THREE.Vector3().crossVectors(b.clone().sub(a),c.clone().sub(a)).length()/2;
+    const S=area(P.A,P.B,P.C), S5=area(R.p5.A,R.p5.B,R.p5.C), S4=area(R.p4.A,R.p4.B,R.p4.C);
+    return `Площадь ABC = ${S.toFixed(2)} &nbsp;·&nbsp; A₄B₄C₄: ${S4.toFixed(3)} (прямая) &nbsp;·&nbsp; A₅B₅C₅ = <b style="color:${NV}">${S5.toFixed(2)} (н.в.)</b> &nbsp;·&nbsp; α = ${R.alpha.toFixed(1)}°`;
+  }
+
+  // ---------- камера ----------
+  const VIEWS={iso:{th:0.5,ph:0.95,r:17,t:[0.6,0.8,2.2]}, top:{th:0,ph:0.001,r:19,t:[0.9,0,1.6]}};
+  const cur={...VIEWS.iso,t:[...VIEWS.iso.t]}, tgt={...VIEWS.iso,t:[...VIEWS.iso.t]};
+  function placeCamera(){const s=Math.sin(cur.ph); camera.position.set(cur.t[0]+cur.r*s*Math.sin(cur.th),cur.t[1]+cur.r*Math.cos(cur.ph),cur.t[2]+cur.r*s*Math.cos(cur.th)); camera.up.set(0,1,0); if(cur.ph<0.01) camera.up.set(0,0,-1); camera.lookAt(...cur.t);}
+  const pointers=new Map(); let pinch0=0,r0=0;
+  canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY}); if(pointers.size===2){const [a,b]=[...pointers.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=tgt.r;}});
+  canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return; const pr=pointers.get(e.pointerId),dx=e.clientX-pr.x,dy=e.clientY-pr.y; pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1){tgt.th-=dx*0.008;tgt.ph=Math.min(Math.PI-0.05,Math.max(0.001,tgt.ph-dy*0.008));cur.th=tgt.th;cur.ph=tgt.ph;markView(null);}
+    else if(pointers.size===2&&pinch0>0){const [a,b]=[...pointers.values()];tgt.r=Math.min(45,Math.max(5,r0*pinch0/Math.hypot(a.x-b.x,a.y-b.y)));}});
+  const up=e=>{pointers.delete(e.pointerId); if(pointers.size<2)pinch0=0;};
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();tgt.r=Math.min(45,Math.max(5,tgt.r*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+  function markView(n){document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===n)));}
+  function goView(n){const v=VIEWS[n]; tgt.th=v.th;tgt.ph=v.ph;tgt.r=v.r;tgt.t=[...v.t]; while(cur.th-tgt.th>Math.PI)cur.th-=2*Math.PI; while(tgt.th-cur.th>Math.PI)cur.th+=2*Math.PI; markView(n);}
+  document.querySelectorAll('#views button').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.view)));
+  function resize(){const s=document.getElementById('stage');renderer.setSize(s.clientWidth,s.clientHeight,false);camera.aspect=s.clientWidth/s.clientHeight;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(document.getElementById('stage'));
+
+  function start(){
+    const Tg=id=>document.getElementById(id);
+    const st={kind:'seg', step:1, u:0, uT:0};
+    const ui=()=>{
+      document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===st.kind)));
+      document.querySelectorAll('#steps button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.step===st.step)));
+      Tg('task').innerHTML=TEXT[st.kind].task; Tg('stepText').textContent=TEXT[st.kind][st.step]; Tg('calc').innerHTML=calc(st.kind);
+      D.sp.visible=Tg('tSpace').checked; D.lk.visible=Tg('tLink').checked;
+    };
+    const setU=v=>{ st.uT=v; Tg('unf').value=Math.round(v*100); Tg('unfV').textContent=Math.round(v*100)+'%'; };
+    document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>{ st.kind=b.dataset.mode; build(st.kind); st.step=1; st.u=0; setU(0); goView('iso'); ui(); }));
+    document.querySelectorAll('#steps button').forEach(b=>b.addEventListener('click',()=>{ st.step=+b.dataset.step; if(st.step===4){ setU(1); goView('top'); } else { setU(0); goView('iso'); } ui(); }));
+    Tg('unf').addEventListener('input',()=>{ setU(+Tg('unf').value/100); st.u=st.uT; if(st.step<3) st.step=3; ui(); });
+    ['tSpace','tLink'].forEach(id=>Tg(id).addEventListener('change',ui));
+    build(st.kind); ui();
+    const mq=matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener&&mq.addEventListener('change',()=>{const c=css('--ink');inkMats.forEach(m=>m.color.set(c));});
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function frame(){
+      const k=reduce?1:0.1;
+      cur.th+=(tgt.th-cur.th)*k;cur.ph+=(tgt.ph-cur.ph)*k;cur.r+=(tgt.r-cur.r)*k; for(let i=0;i<3;i++)cur.t[i]+=(tgt.t[i]-cur.t[i])*k;
+      const du=st.uT-st.u; st.u += reduce ? du : Math.sign(du)*Math.min(Math.abs(du),0.006);
+      update(st.u, st.step===4||st.u>0 ? Math.max(st.step,3) : st.step);
+      placeCamera(); renderer.render(scene,camera); requestAnimationFrame(frame);
+    })();
+    resize();
+  }
+  const ready=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
+  Promise.race([ready,new Promise(r=>setTimeout(r,1500))]).then(start);
+})();
+</script>
+</body>
+</html>
